@@ -18,11 +18,11 @@ func NewRegister() Register {
 func (r Register) String() string {
 	var buf bytes.Buffer
 	for i := 0; i < 4; i++ {
-		buf.WriteString(fmt.Sprintf("%.8b ", r[i]))
+		fmt.Fprintf(&buf, "%.8b ", r[i])
 	}
 	buf.WriteString(" (")
 	for i := 0; i < 4; i++ {
-		buf.WriteString(fmt.Sprintf("0x%.2X ", r[i]))
+		fmt.Fprintf(&buf, "0x%.2X ", r[i])
 	}
 	buf.Truncate(buf.Len() - 1)
 	buf.WriteString(")")

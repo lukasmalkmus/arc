@@ -48,7 +48,7 @@ func (s Simulator) State() string {
 
 	for i := 0; i < 32; i++ {
 		r := "%r" + strconv.Itoa(i)
-		buf.WriteString(r + ":\t" + s.registers[r].String() + "\n")
+		fmt.Fprintf(&buf, "%s:\t%s\n", r, s.registers[r].String())
 	}
 
 	return buf.String()

@@ -14,9 +14,13 @@ import (
 // Parser represents a parser.
 type Parser struct {
 	scanner *scanner.Scanner
-	tok     token.Token
-	lit     string
-	buf     struct {
+
+	// Current token.
+	tok token.Token
+	lit string
+
+	// Buffered token.
+	buf struct {
 		tok token.Token
 		lit string
 		n   int
@@ -42,8 +46,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 
 	p.next()
 	for p.tok != token.EOF {
-		// Linebreaks and Comments might prepend a statement. Those are skipped.
-		if p.tok == token.NL || p.tok == token.COMMENT {
+		// Linebreaks might prepend a statement. Those are skipped.
+		if p.tok == token.NL {
 			p.next()
 			continue
 		}
@@ -67,8 +71,12 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 	// Inspect the first token.
 	p.next()
 	switch p.tok {
+	case token.COMMENT:
+		// nop
 	case token.LOAD:
 		return p.parseLoadStatement()
+	case token.STORE:
+		return p.parseStoreStatement()
 	}
 
 	return nil, newParseError(p.tok, p.lit, token.Keywords()...)
@@ -92,6 +100,38 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 
 	// Next we should read the destination identifier.
 	dest, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEnd(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseStoreStatement parses an StoreStatement AST object.
+func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
+	stmt := &ast.StoreStatement{}
+
+	// First token should be the destination identifier.
+	src, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = src
+
+	// Next we should see a comma as seperator between source and destination.
+	if p.next(); p.tok != token.COMMA {
+		return nil, newParseError(p.tok, p.lit, token.COMMA)
+	}
+
+	// Next we should read the source memory location.
+	dest, err := p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
 	}

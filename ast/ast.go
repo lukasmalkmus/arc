@@ -6,28 +6,16 @@ import (
 	"strings"
 )
 
-// Node is a node in the ARC abstract syntax tree.
-type Node interface {
-	// node is unexported to ensure implementations of Node can only originate
-	// in this package.
-	node()
-	String() string
-}
-
-func (*Program) node()   {}
-func (Statements) node() {}
-
-func (*LoadStatement) node() {}
-
 // Statement is an ARC assembly statement.
 type Statement interface {
-	Node
 	// stmt is unexported to ensure implementations of Statement can only
 	// originate in this package.
 	stmt()
+	String() string
 }
 
-func (*LoadStatement) stmt() {}
+func (*LoadStatement) stmt()  {}
+func (*StoreStatement) stmt() {}
 
 // Statements is a list of statements.
 type Statements []Statement
@@ -61,9 +49,9 @@ func (c Comment) String() string {
 
 // LoadStatement represents a load command (ld).
 type LoadStatement struct {
-	// Source is where the value is loaded from.
+	// Source is the memory location where the value is loaded from.
 	Source *MemoryLocation
-	// Destination is where the value is loaded to.
+	// Destination is the register where the value is loaded to.
 	Destination *Identifier
 }
 
@@ -75,6 +63,25 @@ func (stmt LoadStatement) String() string {
 	buf.WriteString(" TO ")
 	buf.WriteString(stmt.Destination.String())
 	buf.WriteString(" (" + stmt.Source.Mode.String() + ")")
+	return buf.String()
+}
+
+// StoreStatement represents a store command (st).
+type StoreStatement struct {
+	// Source is the register where the value is stored from.
+	Source *Identifier
+	// Destination is the memory location where the value is stored to.
+	Destination *MemoryLocation
+}
+
+// String returns a string representation of the statement.
+func (stmt StoreStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("STORE FROM ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(" TO ")
+	buf.WriteString(stmt.Destination.String())
+	buf.WriteString(" (" + stmt.Destination.Mode.String() + ")")
 	return buf.String()
 }
 

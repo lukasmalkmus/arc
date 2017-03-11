@@ -14,6 +14,7 @@ import (
 
 var errExp = errors.New("Expecting error")
 
+// TestParse will validate that linebreaks, etc. don't break the parser.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		prog string
@@ -21,6 +22,7 @@ func TestParse(t *testing.T) {
 		{"ld %r1, %r2"},
 		{"ld %r1, %r2\nld %r2, %r3"},
 		{"\nld %r1, %r2\nld %r2, %r3"},
+		{"\nld %r1, %r2\n\n\nld %r2, %r3"},
 	}
 
 	for _, tt := range tests {
@@ -133,6 +135,119 @@ func TestParseLoadStatement(t *testing.T) {
 	for _, tt := range tests {
 		stmt, err := ParseStatement(tt.str)
 		if loadStmt, valid := tt.stmt.(*ast.LoadStatement); valid {
+			ok(t, err)
+			fmt.Println(stmt)
+			equals(t, loadStmt, stmt)
+		} else {
+			equals(t, tt.err, err.Error())
+		}
+	}
+}
+
+func TestParseStoreStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "st %r2, %r1",
+			stmt: &ast.StoreStatement{
+				Source:      &ast.Identifier{Name: "%r2"},
+				Destination: &ast.MemoryLocation{Base: &ast.Identifier{Name: "%r1"}, Mode: ast.Indirect},
+			},
+		},
+		{
+			str: "st %r2, [x]",
+			stmt: &ast.StoreStatement{
+				Source:      &ast.Identifier{Name: "%r2"},
+				Destination: &ast.MemoryLocation{Base: &ast.Identifier{Name: "x"}, Mode: ast.Direct},
+			},
+		},
+		{
+			str: "st %r2, [%r1+8191]",
+			stmt: &ast.StoreStatement{
+				Source:      &ast.Identifier{Name: "%r2"},
+				Destination: &ast.MemoryLocation{Base: &ast.Identifier{Name: "%r1"}, Operator: "+", Offset: 8191, Mode: ast.Offset},
+			},
+		},
+		{
+			str: "st %r2, [%r1+0]",
+			stmt: &ast.StoreStatement{
+				Source:      &ast.Identifier{Name: "%r2"},
+				Destination: &ast.MemoryLocation{Base: &ast.Identifier{Name: "%r1"}, Operator: "+", Offset: 0, Mode: ast.Offset},
+			},
+		},
+		{
+			str:  "s %r2, %r1",
+			stmt: nil,
+			err:  `found IDENT ("s"), expected "ld", "st", "add", "sub"`,
+		},
+		{
+			str:  "st st, %r1",
+			stmt: nil,
+			err:  `found "st", expected IDENT`,
+		},
+		{
+			str:  "st %r2 %r1",
+			stmt: nil,
+			err:  `found IDENT ("%r1"), expected ","`,
+		},
+		{
+			str:  "st %r2, st",
+			stmt: nil,
+			err:  `found "st", expected IDENT`,
+		},
+		{
+			str:  "st %r2, %r1, %r3",
+			stmt: nil,
+			err:  `found ",", expected NEWLINE, EOF`,
+		},
+		{
+			str:  "\nst %r2, %r1",
+			stmt: nil,
+			err:  `found NEWLINE, expected "ld", "st", "add", "sub"`,
+		},
+		{
+			str:  "st %r2, [%r1*4]",
+			stmt: nil,
+			err:  `found ILLEGAL ("*"), expected "+", "-"`,
+		},
+		{
+			str:  "st %r2, %r1+4]",
+			stmt: nil,
+			err:  `found "+", expected NEWLINE, EOF`,
+		},
+		{
+			str:  "st %r2, [%r1 + 4",
+			stmt: nil,
+			err:  `found EOF, expected "]"`,
+		},
+		{
+			str:  "st [%r2], %r1",
+			stmt: nil,
+			err:  `found "[", expected IDENT`,
+		},
+		{
+			str:  "st %r2, [%r1+x]",
+			stmt: nil,
+			err:  `found IDENT ("x"), expected INT`,
+		},
+		{
+			str:  "st %r2, [%r1+10000]",
+			stmt: nil,
+			err:  `found INT "10000" is not a valid SIMM13`,
+		},
+		{
+			str:  "st %r2, [10000]",
+			stmt: nil,
+			err:  `found INT ("10000"), expected IDENT`,
+		},
+	}
+
+	for _, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if loadStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
 			ok(t, err)
 			fmt.Println(stmt)
 			equals(t, loadStmt, stmt)

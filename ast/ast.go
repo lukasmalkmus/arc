@@ -14,8 +14,33 @@ type Statement interface {
 	String() string
 }
 
+func (*LabelStatement) stmt() {}
 func (*LoadStatement) stmt()  {}
 func (*StoreStatement) stmt() {}
+
+// Reference is implemented by types which can be referenced by a label. These
+// are statements and identifiers.
+type Reference interface {
+	// ref is unexported to ensure implementations of Reference can only
+	// originate in this package.
+	ref()
+	String() string
+}
+
+func (*LoadStatement) ref()  {}
+func (*StoreStatement) ref() {}
+func (*Identifier) ref()     {}
+func (*Integer) ref()        {}
+
+// MemoryLocation is implemented by types which can be addressed as locations in
+// memory. A single identifier can be addressed as well as expressions.
+type MemoryLocation interface {
+	memLoc()
+	String() string
+}
+
+func (*Expression) memLoc() {}
+func (*Identifier) memLoc() {}
 
 // Statements is a list of statements.
 type Statements []Statement
@@ -26,7 +51,7 @@ func (s Statements) String() string {
 	for _, stmt := range s {
 		str = append(str, stmt.String())
 	}
-	return strings.Join(str, ";\n")
+	return strings.Join(str, "\n")
 }
 
 // Program represents a collection of statements.
@@ -37,20 +62,26 @@ type Program struct {
 // String returns a string representation of the program.
 func (p Program) String() string { return p.Statements.String() }
 
-// Comment represents a comment in the ARC assembly language.
-type Comment struct {
-	Text string
+// LabelStatement represents a label.
+type LabelStatement struct {
+	// Ident is the Labels identifier.
+	Ident *Identifier
+	// Reference is the Statement or Identifier, the label addresses.
+	Reference Reference
 }
 
-// String returns a string representation of the comment.
-func (c Comment) String() string {
-	return c.Text
+func (stmt LabelStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString(stmt.Ident.Value)
+	buf.WriteString(": ")
+	buf.WriteString(stmt.Reference.String())
+	return buf.String()
 }
 
 // LoadStatement represents a load command (ld).
 type LoadStatement struct {
 	// Source is the memory location where the value is loaded from.
-	Source *MemoryLocation
+	Source MemoryLocation
 	// Destination is the register where the value is loaded to.
 	Destination *Identifier
 }
@@ -58,11 +89,10 @@ type LoadStatement struct {
 // String returns a string representation of the statement.
 func (stmt LoadStatement) String() string {
 	var buf bytes.Buffer
-	buf.WriteString("LOAD FROM ")
+	buf.WriteString("ld ")
 	buf.WriteString(stmt.Source.String())
-	buf.WriteString(" TO ")
+	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
-	buf.WriteString(" (" + stmt.Source.Mode.String() + ")")
 	return buf.String()
 }
 
@@ -71,31 +101,59 @@ type StoreStatement struct {
 	// Source is the register where the value is stored from.
 	Source *Identifier
 	// Destination is the memory location where the value is stored to.
-	Destination *MemoryLocation
+	Destination MemoryLocation
 }
 
 // String returns a string representation of the statement.
 func (stmt StoreStatement) String() string {
 	var buf bytes.Buffer
-	buf.WriteString("STORE FROM ")
+	buf.WriteString("st ")
 	buf.WriteString(stmt.Source.String())
-	buf.WriteString(" TO ")
+	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
-	buf.WriteString(" (" + stmt.Destination.Mode.String() + ")")
 	return buf.String()
 }
 
-// Identifier is an named identifier.
+// Expression is an expression which bundles an identifier with an offset. In
+// ARC an expression is delimited by an opening and a closing square bracket.
+type Expression struct {
+	// Ident is the identifier used in the expression.
+	Ident *Identifier
+	// Operator is the operator which is used in the expression.
+	Operator string
+	// Offset is the second operand.
+	Offset Integer
+}
+
+func (e Expression) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("[")
+	buf.WriteString(e.Ident.String())
+	buf.WriteString(e.Operator)
+	buf.WriteString(strconv.FormatInt(int64(e.Offset), 10))
+	buf.WriteString("]")
+	return buf.String()
+}
+
+// Identifier is a named identifier.
 type Identifier struct {
-	// Name is the name of the identifier, which is the tokens literal.
-	Name string
+	// Value is the name of the identifier.
+	Value string
 }
 
 // String returns a string representation of the identifier.
 func (i Identifier) String() string {
-	return i.Name
+	return i.Value
 }
 
+// Integer represents a 32 bit integer value.
+type Integer int32
+
+func (i Integer) String() string {
+	return strconv.FormatInt(int64(i), 10)
+}
+
+/*
 // AddressingMode is the addressing mode used by memory operations.
 type AddressingMode int
 
@@ -121,28 +179,4 @@ const (
 	// determine the final memory address.
 	Offset
 )
-
-// MemoryLocation is the location of a value in the memory.
-type MemoryLocation struct {
-	// Base specifies a location in memory. It can also be a register containing
-	// a memory address.
-	Base *Identifier
-	// Operator is the operator which is used to determine the final memory
-	// location.
-	Operator string
-	// Offset is the offset from the base location used to determine the final
-	// memory location.
-	Offset uint64
-	// Mode is the addressing mode used.
-	Mode AddressingMode
-}
-
-// String returns a string representation of the MemoryLocation.
-func (ml MemoryLocation) String() string {
-	if ml.Mode == Direct {
-		return "[" + ml.Base.String() + "]"
-	} else if ml.Mode == Offset {
-		return "[" + ml.Base.String() + ml.Operator + strconv.FormatUint(ml.Offset, 10) + "]"
-	}
-	return ml.Base.String()
-}
+*/

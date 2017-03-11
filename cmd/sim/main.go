@@ -54,6 +54,8 @@ func main() {
 		} else {
 			if err := sim.Exec(stmt); err != nil {
 				c.Printf("\033[31m[SIMULATOR]:\033[39m %s\n", err)
+			} else {
+				c.Println(stmt)
 			}
 		}
 

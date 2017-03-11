@@ -6,25 +6,31 @@ import (
 )
 
 // A Register is 32bit wide register.
-type Register [4]byte
+type Register int32
 
 // NewRegister creates a new Register.
 func NewRegister() Register {
-	return Register([4]byte{0x00, 0x00, 0x00, 0x00})
+	return 0
 }
 
 // String implements the Stringer interface and returns a string representation
 // of the Register.
 func (r Register) String() string {
 	var buf bytes.Buffer
-	for i := 0; i < 4; i++ {
-		fmt.Fprintf(&buf, "%.8b ", r[i])
-	}
-	buf.WriteString(" (")
-	for i := 0; i < 4; i++ {
-		fmt.Fprintf(&buf, "0x%.2X ", r[i])
-	}
-	buf.Truncate(buf.Len() - 1)
-	buf.WriteString(")")
+	fmt.Fprintf(&buf, "%s (%s)", r.Binary(), r.Hexadecimal())
+	return buf.String()
+}
+
+// Binary returns the binary representation of the registers content.
+func (r Register) Binary() string {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "%.32b", r)
+	return buf.String()
+}
+
+// Hexadecimal returns the hexadecimal representation of the registers content.
+func (r Register) Hexadecimal() string {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "0x%.8X", int32(r))
 	return buf.String()
 }

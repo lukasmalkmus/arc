@@ -62,7 +62,7 @@ var tokens = [...]string{
 
 	// Identifiers and type literals
 	IDENT: "IDENT",
-	INT:   "INT",
+	INT:   "INTEGER",
 
 	// Operators
 	PLUS:  "+",

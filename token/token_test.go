@@ -27,7 +27,7 @@ func TestToken(t *testing.T) {
 
 		// Identifiers and type literals
 		{"IDENT", IDENT, false, true, false, false, false},
-		{"INT", INT, false, true, false, false, false},
+		{"INTEGER", INT, false, true, false, false, false},
 
 		// Operators
 		{"+", PLUS, false, false, true, false, false},

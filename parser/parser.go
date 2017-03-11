@@ -77,16 +77,19 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 		return p.parseLoadStatement()
 	case token.STORE:
 		return p.parseStoreStatement()
+	case token.IDENT:
+		return p.parseLabelStatement()
 	}
 
-	return nil, newParseError(p.tok, p.lit, token.Keywords()...)
+	toks := append([]token.Token{token.IDENT}, token.Keywords()...)
+	return nil, p.newParseError(toks...)
 }
 
 // parseLoadStatement parses an LoadStatement AST object.
 func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	stmt := &ast.LoadStatement{}
 
-	// First token should be the source memory location.
+	// First we should see the source memory location.
 	src, err := p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
@@ -95,10 +98,10 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 
 	// Next we should see a comma as seperator between source and destination.
 	if p.next(); p.tok != token.COMMA {
-		return nil, newParseError(p.tok, p.lit, token.COMMA)
+		return nil, p.newParseError(token.COMMA)
 	}
 
-	// Next we should read the destination identifier.
+	// Next we should see the destination identifier.
 	dest, err := p.parseIdent()
 	if err != nil {
 		return nil, err
@@ -118,19 +121,19 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt := &ast.StoreStatement{}
 
-	// First token should be the destination identifier.
+	// First we should see the destination identifier.
 	src, err := p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
 	stmt.Source = src
 
-	// Next we should see a comma as seperator between source and destination.
+	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
-		return nil, newParseError(p.tok, p.lit, token.COMMA)
+		return nil, p.newParseError(token.COMMA)
 	}
 
-	// Next we should read the source memory location.
+	// Next we should see the source memory location.
 	dest, err := p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
@@ -146,102 +149,139 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	return stmt, nil
 }
 
-// parseIdent parses an identifier and creates a Identifier AST object.
-func (p *Parser) parseIdent() (*ast.Identifier, error) {
-	if p.next(); p.tok != token.IDENT {
-		return nil, newParseError(p.tok, p.lit, token.IDENT)
-	}
-	return &ast.Identifier{Name: p.lit}, nil
-}
+func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
+	stmt := &ast.LabelStatement{}
 
-// parseSIMM13 parses an SIMM13 integer.
-func (p *Parser) parseSIMM13() (uint64, error) {
-	p.next()
-	if p.tok != token.INT {
-		return 0, newParseError(p.tok, p.lit, token.INT)
+	stmt.Ident = &ast.Identifier{Value: p.lit}
+
+	// Labels end with a colon (assignment).
+	if p.next(); p.tok != token.COLON {
+		return nil, p.newParseError(token.COLON)
 	}
 
-	val, err := strconv.ParseUint(p.lit, 0, 13)
-	if err != nil {
-		return 0, &ParseError{Message: fmt.Sprintf("found INT %q is not a valid SIMM13", p.lit)}
-	}
-	return val, nil
-}
-
-// parseMemoryLocation parses a memory location and creates a MemoryLocation AST
-// object.
-func (p *Parser) parseMemoryLocation() (*ast.MemoryLocation, error) {
-	memLoc := &ast.MemoryLocation{}
-
-	// We either expect a left bracket which opens a direct or an offset
-	// expression or a bare identifier which indicates an indirect expression.
-	if p.next(); p.tok == token.LBRACKET {
-		// Opening bracket is followed by identifier.
-		src, err := p.parseIdent()
+	// We either see an identifier or an integer.
+	if p.next(); p.tok == token.IDENT {
+		stmt.Reference = &ast.Identifier{Value: p.lit}
+	} else if p.tok == token.INT {
+		p.unscan()
+		ref, err := p.parseInteger()
 		if err != nil {
 			return nil, err
 		}
-		memLoc.Base = src
+		stmt.Reference = &ref
+	} else {
+		return nil, p.newParseError(token.IDENT, token.INT)
+	}
 
-		// After the identifier we expect a closing bracket which indicates a
-		// direct expression or an operator which indicates an offset
-		// expression.
-		if p.next(); p.tok == token.RBRACKET {
-			memLoc.Mode = ast.Direct
-			return memLoc, nil
+	return stmt, nil
+}
+
+// parseExpression parses an expression and creates an Expression AST object.
+func (p *Parser) parseExpression() (*ast.Expression, error) {
+	exp := &ast.Expression{}
+
+	// A left square bracket indicates the beginning of an expression.
+	if p.next(); p.tok != token.LBRACKET {
+		return nil, p.newParseError(token.LBRACKET)
+	}
+
+	// Opening bracket is followed by identifier.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	exp.Ident = ident
+
+	// After the identifier we expect a closing bracket which indicates a
+	// direct expression or an operator which indicates an offset
+	// expression.
+	if p.next(); p.tok != token.RBRACKET {
+		// If we don't see the closing square bracket, we expect to see an
+		// operator.
+		if p.tok != token.PLUS && p.tok != token.MINUS {
+			return nil, p.newParseError(token.PLUS, token.MINUS, token.RBRACKET)
 		}
 
-		// Must be Offset mode.
-		memLoc.Mode = ast.Offset
-
-		// We expect the operator.
-		if !p.tok.IsOperator() {
-			return nil, newParseError(p.tok, p.lit, token.PLUS, token.MINUS)
-		}
-		memLoc.Operator = p.lit
+		exp.Operator = p.lit
 
 		// We expect the offset value.
 		val, err := p.parseSIMM13()
 		if err != nil {
 			return nil, err
 		}
-		memLoc.Offset = val
+		exp.Offset = val
+	} else {
+		p.unscan()
+	}
 
-		// Finally, the expression must close.
-		if err := p.expectClosing(); err != nil {
+	// The expression must close with a right square bracket.
+	if p.next(); p.tok != token.RBRACKET {
+		return nil, p.newParseError(token.RBRACKET)
+	}
+
+	return exp, nil
+}
+
+// parseIdent parses an identifier and creates an Identifier AST object.
+func (p *Parser) parseIdent() (*ast.Identifier, error) {
+	if p.next(); p.tok != token.IDENT {
+		return nil, p.newParseError(token.IDENT)
+	}
+	return &ast.Identifier{Value: p.lit}, nil
+}
+
+// parseInteger parses an integer and returns an Integer AST object.
+func (p *Parser) parseInteger() (ast.Integer, error) {
+	if p.next(); p.tok != token.INT {
+		return 0, p.newParseError(token.INT)
+	}
+	i, err := strconv.ParseInt(p.lit, 10, 32)
+	if err != nil {
+		return 0, &ParseError{Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit)}
+	}
+	return ast.Integer(i), nil
+}
+
+// parseMemoryLocation parses a memory location and creates an Expression or
+// Identifier AST object.
+func (p *Parser) parseMemoryLocation() (ast.MemoryLocation, error) {
+	var memLoc ast.MemoryLocation
+
+	// We either expect a left bracket which opens a direct or an offset
+	// expression or a bare identifier which indicates an indirect expression.
+	if p.next(); p.tok == token.LBRACKET {
+		p.unscan()
+		exp, err := p.parseExpression()
+		if err != nil {
 			return nil, err
 		}
-
-		return memLoc, nil
+		memLoc = exp
+	} else if p.tok == token.IDENT {
+		memLoc = &ast.Identifier{Value: p.lit}
+	} else {
+		return nil, p.newParseError(token.LBRACKET, token.IDENT)
 	}
-
-	// No opening bracket means we should see a register in indirect addressing
-	// mode.
-	p.unscan()
-	src, err := p.parseIdent()
-	if err != nil {
-		return nil, err
-	}
-	memLoc.Base = src
-	memLoc.Mode = ast.Indirect
 
 	return memLoc, nil
 }
 
-// expectClosing expectes the end of a expression and will error if the next
-// token is not a RBRACKET token. This method will unscan the read token.
-func (p *Parser) expectClosing() error {
-	if p.next(); p.tok != token.RBRACKET {
-		return newParseError(p.tok, p.lit, token.RBRACKET)
+// parseSIMM13 parses an SIMM13 integer.
+func (p *Parser) parseSIMM13() (ast.Integer, error) {
+	if p.next(); p.tok != token.INT {
+		return 0, p.newParseError(token.INT)
 	}
-	return nil
+	val, err := strconv.ParseUint(p.lit, 0, 13)
+	if err != nil {
+		return 0, &ParseError{Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit)}
+	}
+	return ast.Integer(val), nil
 }
 
 // expectStatementEnd expectes the end of a statement and will error if the next
 // token is not a NL (newline) or EOF token.
 func (p *Parser) expectStatementEnd() error {
 	if p.next(); p.tok != token.NL && p.tok != token.EOF {
-		return newParseError(p.tok, p.lit, token.NL, token.EOF)
+		return p.newParseError(token.NL, token.EOF)
 	}
 	return nil
 }
@@ -282,8 +322,8 @@ type ParseError struct {
 }
 
 // newParseError returns a new instance of ParseError.
-func newParseError(foundTok token.Token, foundLit string, expected ...token.Token) *ParseError {
-	return &ParseError{FoundTok: foundTok, FoundLit: foundLit, Expected: expected}
+func (p *Parser) newParseError(expected ...token.Token) *ParseError {
+	return &ParseError{FoundTok: p.tok, FoundLit: p.lit, Expected: expected}
 }
 
 // Error returns the string representation of the error.

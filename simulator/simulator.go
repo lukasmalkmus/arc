@@ -21,25 +21,29 @@ func New() *Simulator {
 	}
 
 	for i := 0; i < 32; i++ {
-		r := "%r" + strconv.Itoa(i)
+		r := "r" + strconv.Itoa(i)
 		s.registers[r] = NewRegister()
 	}
+	s.registers["pc"] = NewRegister()
 
 	return s
 }
 
 // Exec will parse and run the string on the Simulator.
 func (s *Simulator) Exec(stmt ast.Statement) error {
+	var err error
 	switch stmt.(type) {
 	case *ast.LoadStatement:
-		s.execLoadStatement(stmt.(*ast.LoadStatement))
+		err = s.execLoadStatement(stmt.(*ast.LoadStatement))
 	case *ast.StoreStatement:
-		s.execStoreStatement(stmt.(*ast.StoreStatement))
+		err = s.execStoreStatement(stmt.(*ast.StoreStatement))
+	case *ast.LabelStatement:
+		// nop.
 	default:
 		return fmt.Errorf("no logic implemented to run this type of statement")
 	}
 
-	return nil
+	return err
 }
 
 // State returns a string representation of the Simulators state.
@@ -47,17 +51,25 @@ func (s Simulator) State() string {
 	var buf bytes.Buffer
 
 	for i := 0; i < 32; i++ {
-		r := "%r" + strconv.Itoa(i)
+		r := "r" + strconv.Itoa(i)
 		fmt.Fprintf(&buf, "%s:\t%s\n", r, s.registers[r].String())
 	}
+	fmt.Fprintf(&buf, "%s:\t%s\n", "pc", s.registers["pc"].String())
 
 	return buf.String()
 }
 
+// execLoadStatement executes a ld command on the simulator.
 func (s *Simulator) execLoadStatement(stmt *ast.LoadStatement) error {
 	return nil
 }
 
+// execStoreStatement executes a st command on the simulator.
 func (s *Simulator) execStoreStatement(stmt *ast.StoreStatement) error {
 	return nil
+}
+
+// incPC increments the simulators program counter.
+func (s *Simulator) incPC() {
+	s.registers["pc"] += Register(4)
 }

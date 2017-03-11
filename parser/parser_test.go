@@ -57,6 +57,13 @@ func TestParseLoadStatement(t *testing.T) {
 			},
 		},
 		{
+			str: "ld [%r1+0], %r2",
+			stmt: &ast.LoadStatement{
+				Source:      &ast.MemoryLocation{Base: &ast.Identifier{Name: "%r1"}, Operator: "+", Offset: 0, Mode: ast.Offset},
+				Destination: &ast.Identifier{Name: "%r2"},
+			},
+		},
+		{
 			str:  "l %r1, %r2",
 			stmt: nil,
 			err:  `found IDENT ("l"), expected "ld", "st", "add", "sub"`,

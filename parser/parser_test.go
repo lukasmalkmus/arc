@@ -26,15 +26,32 @@ func TestParserBuffer(t *testing.T) {
 	equals(t, 0, lit, bufLit)
 }
 
-// TestParse will validate that linebreaks, etc. don't break the parser.
+// TestParse wiprog: `.ll validate that linebreaks, etc. don't break the parser.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		prog string
+		err  string
 	}{
-		{"ld %r1, %r2"},
-		{"ld %r1, %r2\nld %r2, %r3"},
-		{"\nld %r1, %r2\nld %r2, %r3"},
-		{"\nld %r1, %r2\n\n\nld %r2, %r3"},
+		{
+			prog: `.begin
+		ld %r1, %r2
+		.end`,
+			err: ``,
+		},
+		{
+			prog: `
+		.begin
+
+		ld %r1, %r2
+
+
+		ld %r2, %r3
+
+		.end
+
+		`,
+			err: ``,
+		},
 	}
 
 	for tc, tt := range tests {

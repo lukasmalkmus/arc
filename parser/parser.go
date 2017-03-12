@@ -29,7 +29,14 @@ type Parser struct {
 
 // New returns a new instance of Parser.
 func New(r io.Reader) *Parser {
-	return &Parser{scanner: scanner.New(r)}
+	// Init Parser with EOF token. This ensures functions must read the first
+	// token themselves.
+	p := &Parser{
+		scanner: scanner.New(r),
+		tok:     token.EOF,
+		lit:     "",
+	}
+	return p
 }
 
 // Parse parses a string into a Program AST object.
@@ -44,16 +51,33 @@ func ParseStatement(s string) (ast.Statement, error) {
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{}
 
+	// Read first token.
 	p.next()
+
+	// Fast forward to first non-whitespace, non-newline, non-comment token.
+	for p.tok != token.EOF {
+		// Skip linebreaks and comments. First token must be .begin directive.
+		if p.tok == token.NL || p.tok == token.COMMENT {
+			p.next()
+			continue
+		} else if p.tok == token.BEGIN {
+			p.next()
+			break
+		}
+		return nil, p.newParseError(token.BEGIN)
+	}
+
 	for p.tok != token.EOF {
 		// Linebreaks might prepend a statement. Those are skipped.
 		if p.tok == token.NL {
 			p.next()
 			continue
+		} else if p.tok == token.END {
+			p.next()
+			break
 		}
 
-		p.unscan()
-		stmt, err := p.ParseStatement()
+		stmt, err := p.parseStatement(true)
 		if err != nil {
 			return nil, err
 		}
@@ -63,11 +87,23 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.next()
 	}
 
+	// Last token must be .end directive.
+	for p.tok != token.EOF {
+		// Skip linebreaks and comments. First token must be .begin directive.
+		if p.tok == token.NL || p.tok == token.COMMENT {
+			p.next()
+			continue
+		}
+		return nil, p.newParseError(token.EOF)
+	}
+
 	return prog, nil
 }
 
 // ParseStatement parses lexical tokens into a Statement AST object.
 func (p *Parser) ParseStatement() (ast.Statement, error) {
+	// Inspect the first token.
+	p.next()
 	return p.parseStatement(true)
 }
 
@@ -75,8 +111,6 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 // identifiers into LabelStatement AST objects can be turned off by passing
 // true. This will return an empty LabelStatement.
 func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
-	// Inspect the first token.
-	p.next()
 	switch p.tok {
 	case token.COMMENT:
 		// nop
@@ -178,7 +212,6 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 		}
 		stmt.Reference = ref
 	} else {
-		p.unscan()
 		ref, err := p.parseStatement(false)
 		if err != nil {
 			return nil, err

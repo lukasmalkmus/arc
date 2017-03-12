@@ -314,6 +314,7 @@ func TestParseMemoryLocation(t *testing.T) {
 		{str: "[x]", obj: &ast.Expression{Ident: &ast.Identifier{Value: "x"}}},
 		{str: "x", obj: &ast.Identifier{Value: "x"}},
 		{str: "123", err: `found INTEGER ("123"), expected "[", IDENT`},
+		{str: "[x+]", err: `found "]", expected INTEGER`},
 	}
 
 	for i, tt := range tests {

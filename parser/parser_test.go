@@ -79,34 +79,28 @@ func TestParseLoadStatement(t *testing.T) {
 			},
 		},
 		{
-			str:  "l %r1, %r2",
-			stmt: nil,
-			err:  `found IDENT ("%r1"), expected ":"`,
+			str: "l %r1, %r2",
+			err: `found IDENT ("%r1"), expected ":"`,
 		},
 		{
-			str:  "ld ld, %r2",
-			stmt: nil,
-			err:  `found "ld", expected "[", IDENT`,
+			str: "ld ld, %r2",
+			err: `found "ld", expected "[", IDENT`,
 		},
 		{
-			str:  "ld %r1 %r2",
-			stmt: nil,
-			err:  `found IDENT ("%r2"), expected ","`,
+			str: "ld %r1 %r2",
+			err: `found IDENT ("%r2"), expected ","`,
 		},
 		{
-			str:  "ld %r1, ld",
-			stmt: nil,
-			err:  `found "ld", expected IDENT`,
+			str: "ld %r1, ld",
+			err: `found "ld", expected IDENT`,
 		},
 		{
-			str:  "ld %r1, %r2, %r3",
-			stmt: nil,
-			err:  `found ",", expected NEWLINE, EOF`,
+			str: "ld %r1, %r2, %r3",
+			err: `found ",", expected NEWLINE, EOF`,
 		},
 		{
-			str:  "\nld %r1, %r2",
-			stmt: nil,
-			err:  `found NEWLINE, expected "ld", "st", "add", "sub"`,
+			str: "\nld %r1, %r2",
+			err: `found NEWLINE, expected "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -157,34 +151,28 @@ func TestParseStoreStatement(t *testing.T) {
 			},
 		},
 		{
-			str:  "s %r2, %r1",
-			stmt: nil,
-			err:  `found IDENT ("%r2"), expected ":"`,
+			str: "s %r2, %r1",
+			err: `found IDENT ("%r2"), expected ":"`,
 		},
 		{
-			str:  "st st, %r1",
-			stmt: nil,
-			err:  `found "st", expected IDENT`,
+			str: "st st, %r1",
+			err: `found "st", expected IDENT`,
 		},
 		{
-			str:  "st %r2 %r1",
-			stmt: nil,
-			err:  `found IDENT ("%r1"), expected ","`,
+			str: "st %r2 %r1",
+			err: `found IDENT ("%r1"), expected ","`,
 		},
 		{
-			str:  "st %r2, st",
-			stmt: nil,
-			err:  `found "st", expected "[", IDENT`,
+			str: "st %r2, st",
+			err: `found "st", expected "[", IDENT`,
 		},
 		{
-			str:  "st %r2, %r1, %r3",
-			stmt: nil,
-			err:  `found ",", expected NEWLINE, EOF`,
+			str: "st %r2, %r1, %r3",
+			err: `found ",", expected NEWLINE, EOF`,
 		},
 		{
-			str:  "\nst %r2, %r1",
-			stmt: nil,
-			err:  `found NEWLINE, expected "ld", "st", "add", "sub"`,
+			str: "\nst %r2, %r1",
+			err: `found NEWLINE, expected "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -245,12 +233,13 @@ func TestParseExpression(t *testing.T) {
 		{str: "[%r1+8191]", obj: &ast.Expression{Ident: &ast.Identifier{Value: "%r1"}, Operator: "+", Offset: 8191}},
 		{str: "[%r1+0]", obj: &ast.Expression{Ident: &ast.Identifier{Value: "%r1"}, Operator: "+", Offset: 0}},
 		{str: "[x]", obj: &ast.Expression{Ident: &ast.Identifier{Value: "x"}, Operator: "", Offset: 0}},
-		{str: "[+8191]", obj: nil, err: `found "+", expected IDENT`},
-		{str: "[0+8191]", obj: nil, err: `found INTEGER ("0"), expected IDENT`},
-		{str: "[%r1 8191]", obj: nil, err: `found INTEGER ("8191"), expected "+", "-", "]"`},
-		{str: "[%r1*8191]", obj: nil, err: `found ILLEGAL ("*"), expected "+", "-", "]"`},
-		{str: "[%r1+]", obj: nil, err: `found "]", expected INTEGER`},
-		{str: "[%r1+45", obj: nil, err: `found EOF, expected "]"`},
+		{str: "x]", err: `found IDENT ("x"), expected "["`},
+		{str: "[+8191]", err: `found "+", expected IDENT`},
+		{str: "[0+8191]", err: `found INTEGER ("0"), expected IDENT`},
+		{str: "[%r1 8191]", err: `found INTEGER ("8191"), expected "+", "-", "]"`},
+		{str: "[%r1*8191]", err: `found ILLEGAL ("*"), expected "+", "-", "]"`},
+		{str: "[%r1+]", err: `found "]", expected INTEGER`},
+		{str: "[%r1+45", err: `found EOF, expected "]"`},
 	}
 
 	for i, tt := range tests {
@@ -274,8 +263,8 @@ func TestParseIdent(t *testing.T) {
 		{str: "x", obj: &ast.Identifier{Value: "x"}},
 		{str: "%r1", obj: &ast.Identifier{Value: "%r1"}},
 		{str: "mylabel", obj: &ast.Identifier{Value: "mylabel"}},
-		{str: ":x", obj: nil, err: `found ":", expected IDENT`},
-		{str: "123", obj: nil, err: `found INTEGER ("123"), expected IDENT`},
+		{str: ":x", err: `found ":", expected IDENT`},
+		{str: "123", err: `found INTEGER ("123"), expected IDENT`},
 	}
 
 	for i, tt := range tests {
@@ -300,8 +289,8 @@ func TestParseInteger(t *testing.T) {
 		{str: "100", obj: ast.Integer(100)},
 		{str: "001", obj: ast.Integer(1)},
 		{str: "0", obj: ast.Integer(0)},
-		{str: "90000000000000", obj: 0, err: `integer 90000000000000 overflows 32 bit integer`},
-		{str: "x", obj: 0, err: `found IDENT ("x"), expected INTEGER`},
+		{str: "90000000000000", err: `integer 90000000000000 overflows 32 bit integer`},
+		{str: "x", err: `found IDENT ("x"), expected INTEGER`},
 	}
 
 	for i, tt := range tests {
@@ -324,7 +313,7 @@ func TestParseMemoryLocation(t *testing.T) {
 	}{
 		{str: "[x]", obj: &ast.Expression{Ident: &ast.Identifier{Value: "x"}}},
 		{str: "x", obj: &ast.Identifier{Value: "x"}},
-		{str: "123", obj: nil, err: `found INTEGER ("123"), expected "[", IDENT`},
+		{str: "123", err: `found INTEGER ("123"), expected "[", IDENT`},
 	}
 
 	for i, tt := range tests {
@@ -376,8 +365,8 @@ func TestParseSIMM13(t *testing.T) {
 		{str: "001", obj: ast.Integer(1)},
 		{str: "0", obj: ast.Integer(0)},
 		{str: "8191", obj: ast.Integer(8191)},
-		{str: "8192", obj: 0, err: `integer 8192 is not a valid SIMM13`},
-		{str: "-1", obj: 0, err: `found "-", expected INTEGER`},
+		{str: "8192", err: `integer 8192 is not a valid SIMM13`},
+		{str: "-1", err: `found "-", expected INTEGER`},
 	}
 
 	for i, tt := range tests {

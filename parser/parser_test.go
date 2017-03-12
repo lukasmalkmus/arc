@@ -106,7 +106,7 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str:  "\nld %r1, %r2",
 			stmt: nil,
-			err:  `found NEWLINE, expected IDENT, "ld", "st", "add", "sub"`,
+			err:  `found NEWLINE, expected "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -184,7 +184,7 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str:  "\nst %r2, %r1",
 			stmt: nil,
-			err:  `found NEWLINE, expected IDENT, "ld", "st", "add", "sub"`,
+			err:  `found NEWLINE, expected "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -193,6 +193,42 @@ func TestParseStoreStatement(t *testing.T) {
 		if loadStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
 			ok(t, tc, err)
 			equals(t, tc, loadStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseLabelStatement validates the correct parsing of st commands.
+func TestParseLabelStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str:  "x: 25",
+			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "x"}, Reference: ast.Integer(25)},
+		},
+		{
+			str: "mylabel: ld %r1, %r2",
+			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "mylabel"},
+				Reference: &ast.LoadStatement{
+					Source:      &ast.Identifier{Value: "%r1"},
+					Destination: &ast.Identifier{Value: "%r2"},
+				}},
+		},
+		{str: "x: y: 25", err: `found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
+		{str: "x: 25;", err: `found ILLEGAL (";"), expected NEWLINE, EOF`},
+		{str: "x: ld", err: `found EOF, expected "[", IDENT`},
+		{str: "X: 90000000000000", err: `integer 90000000000000 overflows 32 bit integer`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, labelStmt, stmt)
 		} else {
 			equals(t, tc, tt.err, err.Error())
 		}

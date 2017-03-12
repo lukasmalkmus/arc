@@ -30,7 +30,7 @@ type Reference interface {
 func (*LoadStatement) ref()  {}
 func (*StoreStatement) ref() {}
 func (*Identifier) ref()     {}
-func (*Integer) ref()        {}
+func (Integer) ref()         {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
 // memory. A single identifier can be addressed as well as expressions.
@@ -64,9 +64,9 @@ func (p Program) String() string { return p.Statements.String() }
 
 // LabelStatement represents a label.
 type LabelStatement struct {
-	// Ident is the Labels identifier.
+	// Ident is the labels identifier.
 	Ident *Identifier
-	// Reference is the Statement or Identifier, the label addresses.
+	// Reference is an Identifier, Integer or the Statement, the label addresses.
 	Reference Reference
 }
 

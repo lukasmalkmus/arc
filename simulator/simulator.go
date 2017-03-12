@@ -38,7 +38,7 @@ func (s *Simulator) Exec(stmt ast.Statement) error {
 	case *ast.StoreStatement:
 		err = s.execStoreStatement(stmt.(*ast.StoreStatement))
 	case *ast.LabelStatement:
-		// nop.
+		err = s.execLabelStatement(stmt.(*ast.LabelStatement))
 	default:
 		return fmt.Errorf("no logic implemented to run this type of statement")
 	}
@@ -61,11 +61,18 @@ func (s Simulator) State() string {
 
 // execLoadStatement executes a ld command on the simulator.
 func (s *Simulator) execLoadStatement(stmt *ast.LoadStatement) error {
+	s.incPC()
 	return nil
 }
 
 // execStoreStatement executes a st command on the simulator.
 func (s *Simulator) execStoreStatement(stmt *ast.StoreStatement) error {
+	s.incPC()
+	return nil
+}
+
+// execLabelStatement executes a label command on the simulator.
+func (s *Simulator) execLabelStatement(stmt *ast.LabelStatement) error {
 	return nil
 }
 

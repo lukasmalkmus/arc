@@ -68,6 +68,13 @@ func (p *Parser) Parse() (*ast.Program, error) {
 
 // ParseStatement parses lexical tokens into a Statement AST object.
 func (p *Parser) ParseStatement() (ast.Statement, error) {
+	return p.parseStatement(true)
+}
+
+// parseStatement parses lexical tokens into a Statement AST object. Parsing
+// identifiers into LabelStatement AST objects can be turned off by passing
+// true. This will return an empty LabelStatement.
+func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 	// Inspect the first token.
 	p.next()
 	switch p.tok {
@@ -78,11 +85,13 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 	case token.STORE:
 		return p.parseStoreStatement()
 	case token.IDENT:
+		if !withLabel {
+			return &ast.LabelStatement{}, nil
+		}
 		return p.parseLabelStatement()
 	}
 
-	toks := append([]token.Token{token.IDENT}, token.Keywords()...)
-	return nil, p.newParseError(toks...)
+	return nil, p.newParseError(token.Keywords()...)
 }
 
 // parseLoadStatement parses an LoadStatement AST object.
@@ -159,18 +168,32 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 		return nil, p.newParseError(token.COLON)
 	}
 
-	// We either see an identifier or an integer.
-	if p.next(); p.tok == token.IDENT {
-		stmt.Reference = &ast.Identifier{Value: p.lit}
-	} else if p.tok == token.INT {
+	// We either want an integer or a statement.
+	// TODO: We need a string datatype!
+	if p.next(); p.tok == token.INT {
 		p.unscan()
 		ref, err := p.parseInteger()
 		if err != nil {
 			return nil, err
 		}
-		stmt.Reference = &ref
+		stmt.Reference = ref
 	} else {
-		return nil, p.newParseError(token.IDENT, token.INT)
+		p.unscan()
+		ref, err := p.parseStatement(false)
+		if err != nil {
+			return nil, err
+		}
+		refStmt, valid := ref.(ast.Reference)
+		if !valid {
+			toks := append([]token.Token{token.INT}, token.Keywords()...)
+			return nil, p.newParseError(toks...)
+		}
+		stmt.Reference = refStmt
+	}
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEnd(); err != nil {
+		return nil, err
 	}
 
 	return stmt, nil
@@ -201,7 +224,6 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 		if p.tok != token.PLUS && p.tok != token.MINUS {
 			return nil, p.newParseError(token.PLUS, token.MINUS, token.RBRACKET)
 		}
-
 		exp.Operator = p.lit
 
 		// We expect the offset value.

@@ -58,24 +58,15 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	p.next()
 
 	// Fast forward to first non-whitespace, non-newline, non-comment token.
-	for p.tok != token.EOF {
-		// Skip linebreaks and comments. First token must be .begin directive.
-		if p.tok == token.NL || p.tok == token.COMMENT {
-			p.next()
-			continue
-		} else if p.tok == token.BEGIN {
-			p.next()
-			break
-		}
+	// First token must be .begin directive.
+	if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok != token.BEGIN {
 		return nil, p.newParseError(token.BEGIN)
 	}
+	p.next()
 
 	for p.tok != token.EOF {
-		// Linebreaks might prepend a statement. Those are skipped.
-		if p.tok == token.NL {
-			p.next()
-			continue
-		} else if p.tok == token.END {
+		// Linebreaks and comments might prepend a statement. Those are skipped.
+		if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok == token.END {
 			p.next()
 			break
 		}
@@ -91,13 +82,9 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.next()
 	}
 
-	// Last token must be .end directive.
-	for p.tok != token.EOF {
-		// Skip linebreaks and comments. First token must be .begin directive.
-		if p.tok == token.NL || p.tok == token.COMMENT {
-			p.next()
-			continue
-		}
+	// Fast forward to next non-whitespace, non-newline, non-comment token.
+	// Last token must be EOF.
+	if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok != token.EOF {
 		return nil, p.newParseError(token.EOF)
 	}
 
@@ -366,6 +353,18 @@ func (p *Parser) scan() {
 
 	// Save it to the buffer in case we unscan later.
 	p.buf.tok, p.buf.lit, p.buf.pos = p.tok, p.lit, p.pos
+}
+
+// scanIgnoreWhiteSpaceNewLineComment scans the next non-whitespace,
+// non-newline, non-comment token.
+func (p *Parser) scanIgnoreWhiteSpaceNewLineComment() {
+	for p.tok != token.EOF {
+		if p.tok == token.NL || p.tok == token.COMMENT {
+			p.next()
+			continue
+		}
+		break
+	}
 }
 
 // next scans the next non-whitespace token.

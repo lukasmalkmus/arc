@@ -18,11 +18,13 @@ type Parser struct {
 	// Current token.
 	tok token.Token
 	lit string
+	pos token.Pos
 
 	// Buffered token.
 	buf struct {
 		tok token.Token
 		lit string
+		pos token.Pos
 		n   int
 	}
 }
@@ -35,6 +37,7 @@ func New(r io.Reader) *Parser {
 		scanner: scanner.New(r),
 		tok:     token.EOF,
 		lit:     "",
+		pos:     token.Pos{Filename: "", Line: 0},
 	}
 	return p
 }
@@ -77,6 +80,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 			break
 		}
 
+		// Parse statement.
 		stmt, err := p.parseStatement(true)
 		if err != nil {
 			return nil, err
@@ -292,7 +296,7 @@ func (p *Parser) parseInteger() (ast.Integer, error) {
 	}
 	i, err := strconv.ParseInt(p.lit, 10, 32)
 	if err != nil {
-		return 0, &ParseError{Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit)}
+		return 0, &ParseError{Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit), Pos: p.pos}
 	}
 	return ast.Integer(i), nil
 }
@@ -327,7 +331,7 @@ func (p *Parser) parseSIMM13() (ast.Integer, error) {
 	}
 	val, err := strconv.ParseUint(p.lit, 0, 13)
 	if err != nil {
-		return 0, &ParseError{Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit)}
+		return 0, &ParseError{Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit), Pos: p.pos}
 	}
 	return ast.Integer(val), nil
 }
@@ -347,15 +351,15 @@ func (p *Parser) scan() {
 	// If we have a token on the buffer, then return it.
 	if p.buf.n != 0 {
 		p.buf.n = 0
-		p.tok, p.lit = p.buf.tok, p.buf.lit
+		p.tok, p.lit, p.pos = p.buf.tok, p.buf.lit, p.buf.pos
 		return
 	}
 
 	// Otherwise read the next token from the scanner.
-	p.tok, p.lit = p.scanner.Scan()
+	p.tok, p.lit, p.pos = p.scanner.Scan()
 
 	// Save it to the buffer in case we unscan later.
-	p.buf.tok, p.buf.lit = p.tok, p.lit
+	p.buf.tok, p.buf.lit, p.buf.pos = p.tok, p.lit, p.pos
 }
 
 // next scans the next non-whitespace token.
@@ -373,18 +377,19 @@ type ParseError struct {
 	Message  string
 	FoundTok token.Token
 	FoundLit string
+	Pos      token.Pos
 	Expected []token.Token
 }
 
 // newParseError returns a new instance of ParseError.
 func (p *Parser) newParseError(expected ...token.Token) *ParseError {
-	return &ParseError{FoundTok: p.tok, FoundLit: p.lit, Expected: expected}
+	return &ParseError{FoundTok: p.tok, FoundLit: p.lit, Pos: p.pos, Expected: expected}
 }
 
 // Error returns the string representation of the error.
 func (e *ParseError) Error() string {
 	if e.Message != "" {
-		return e.Message
+		return fmt.Sprintf("%s: %s", e.Pos, e.Message)
 	}
 
 	act := ""
@@ -405,5 +410,5 @@ func (e *ParseError) Error() string {
 		}
 	}
 
-	return fmt.Sprintf("found %s, expected %s", act, strings.Join(exp, ", "))
+	return fmt.Sprintf("%s: found %s, expected %s", e.Pos, act, strings.Join(exp, ", "))
 }

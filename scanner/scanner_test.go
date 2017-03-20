@@ -16,76 +16,76 @@ func TestScanner_Scan(t *testing.T) {
 		str     string
 		Token   token.Token
 		Literal string
+		Line    int
 	}{
 		// Special tokens
-		{"#", token.ILLEGAL, "#"},
-		{"_", token.ILLEGAL, "_"},
-		{"_123", token.ILLEGAL, "_"},
-		{".", token.ILLEGAL, "."},
-		{".123", token.ILLEGAL, "."},
-		{"", token.EOF, ""},
-		{" ", token.WS, " "},
-		{"   ", token.WS, "   "},
-		{"   x", token.WS, "   "},
-		{"\t", token.WS, "\t"},
-		{"\n", token.NL, "\n"},
-		{"\r", token.NL, "\r"},
-		{"\n\r", token.NL, "\n\r"},
-		{"\r\n", token.NL, "\r\n"},
-		{"\n\n", token.NL, "\n\n"},
-		{"\r\r", token.NL, "\r\r"},
-		{"\nx", token.NL, "\n"},
-		{"!", token.COMMENT, "!"},
-		{"! My comment", token.COMMENT, "! My comment"},
-		{"!    My second comment", token.COMMENT, "!    My second comment"},
+		{"#", token.ILLEGAL, "#", 1},
+		{"_", token.ILLEGAL, "_", 1},
+		{"_123", token.ILLEGAL, "_", 1},
+		{".", token.ILLEGAL, ".", 1},
+		{".123", token.ILLEGAL, ".", 1},
+		{"", token.EOF, "", 1},
+		{" ", token.WS, " ", 1},
+		{"   ", token.WS, "   ", 1},
+		{"   x", token.WS, "   ", 1},
+		{"\t", token.WS, "\t", 1},
+		{"\n", token.NL, "\n", 1},         // Single newline (LF)
+		{"\r\n", token.NL, "\n", 1},       // Single newline (CRLF)
+		{"\n\n", token.NL, "\n\n", 2},     // Double newline (LF + LF)
+		{"\r\n\r\n", token.NL, "\n\n", 2}, // Double newline (CRLF + CRLF)
+		{"\nx", token.NL, "\n", 1},
+		{"!", token.COMMENT, "!", 1},
+		{"! My comment", token.COMMENT, "! My comment", 1},
+		{"!    My second comment", token.COMMENT, "!    My second comment", 1},
 
 		// Identifiers
-		{"x", token.IDENT, "x"},
-		{"foo ", token.IDENT, "foo"},
-		{"x9", token.IDENT, "x9"},
-		{"r1", token.IDENT, "r1"},
-		{"r10", token.IDENT, "r10"},
-		{"r31", token.IDENT, "r31"},
-		{"4", token.INT, "4"},
-		{"8", token.INT, "8"},
-		{"12", token.INT, "12"},
-		{"16", token.INT, "16"},
-		{"128", token.INT, "128"},
-		{"123x", token.INT, "123"},
+		{"x", token.IDENT, "x", 1},
+		{"foo ", token.IDENT, "foo", 1},
+		{"x9", token.IDENT, "x9", 1},
+		{"r1", token.IDENT, "r1", 1},
+		{"r10", token.IDENT, "r10", 1},
+		{"r31", token.IDENT, "r31", 1},
+		{"4", token.INT, "4", 1},
+		{"8", token.INT, "8", 1},
+		{"12", token.INT, "12", 1},
+		{"16", token.INT, "16", 1},
+		{"128", token.INT, "128", 1},
+		{"123x", token.INT, "123", 1},
 
 		// Operators
-		{"+", token.PLUS, "+"},
-		{"+4", token.PLUS, "+"},
-		{"-", token.MINUS, "-"},
-		{"-4", token.MINUS, "-"},
+		{"+", token.PLUS, "+", 1},
+		{"+4", token.PLUS, "+", 1},
+		{"-", token.MINUS, "-", 1},
+		{"-4", token.MINUS, "-", 1},
 
 		// Misc characters
-		{"[", token.LBRACKET, "["},
-		{"]", token.RBRACKET, "]"},
-		{",", token.COMMA, ","},
-		{":", token.COLON, ":"},
+		{"[", token.LBRACKET, "[", 1},
+		{"]", token.RBRACKET, "]", 1},
+		{",", token.COMMA, ",", 1},
+		{":", token.COLON, ":", 1},
 
 		// Keywords
-		{"ld", token.LOAD, "ld"},
-		{"LD", token.LOAD, "LD"},
-		{"st", token.STORE, "st"},
-		{"ST", token.STORE, "ST"},
-		{"add", token.ADD, "add"},
-		{"ADD", token.ADD, "ADD"},
-		{"sub", token.SUB, "sub"},
-		{"SUB", token.SUB, "SUB"},
+		{"ld", token.LOAD, "ld", 1},
+		{"LD", token.LOAD, "LD", 1},
+		{"st", token.STORE, "st", 1},
+		{"ST", token.STORE, "ST", 1},
+		{"add", token.ADD, "add", 1},
+		{"ADD", token.ADD, "ADD", 1},
+		{"sub", token.SUB, "sub", 1},
+		{"SUB", token.SUB, "SUB", 1},
 
 		// Directives
-		{".begin", token.BEGIN, ".begin"},
-		{".end", token.END, ".end"},
-		{".org", token.ORG, ".org"},
+		{".begin", token.BEGIN, ".begin", 1},
+		{".end", token.END, ".end", 1},
+		{".org", token.ORG, ".org", 1},
 	}
 
-	for _, tt := range tests {
+	for tc, tt := range tests {
 		s := New(strings.NewReader(tt.str))
-		tok, lit := s.Scan()
-		equals(t, tt.Token, tok)
-		equals(t, tt.Literal, lit)
+		tok, lit, pos := s.Scan()
+		equals(t, tc, tt.Token, tok)
+		equals(t, tc, tt.Literal, lit)
+		equals(t, tc, tt.Line, pos.Line)
 	}
 }
 
@@ -108,10 +108,10 @@ func ok(tb testing.TB, err error) {
 }
 
 // equals fails the test if exp is not equal to act.
-func equals(tb testing.TB, exp, act interface{}) {
+func equals(tb testing.TB, tc int, exp, act interface{}) {
 	if !reflect.DeepEqual(exp, act) {
 		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, exp, act)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\n\n\t(test case %d)\033[39m\n\n", filepath.Base(file), line, exp, act, tc+1)
 		tb.FailNow()
 	}
 }

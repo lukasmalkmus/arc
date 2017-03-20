@@ -63,7 +63,7 @@ func TestToken(t *testing.T) {
 
 func TestKeywords(t *testing.T) {
 	for _, tok := range Keywords() {
-		assert(t, tok.IsKeyword(), "Returned token isn't a keywords!", tok)
+		assert(t, tok.IsKeyword(), "Returned token isn't a keyword!", tok)
 	}
 }
 

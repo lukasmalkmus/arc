@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var print bool
+
 // replCmd represents the repl command
 var replCmd = &cobra.Command{
 	Use:   "repl",
@@ -28,11 +30,17 @@ check mark. Parser errors will be printed to Stdout.`,
 			text = strings.TrimSpace(text)
 
 			// Parse actual input.
-			if _, err = parser.ParseStatement(text); err != nil {
+			stmt, err := parser.ParseStatement(text)
+			if err != nil {
 				c.Printf("\033[31m%s\033[39m\n", err)
-			} else {
-				c.Println("✓")
+				return nil
 			}
+			if print {
+				c.Println(stmt)
+				return nil
+			}
+			c.Println("✓")
+
 			return nil
 		}
 		session.Run()
@@ -41,4 +49,6 @@ check mark. Parser errors will be printed to Stdout.`,
 
 func init() {
 	RootCmd.AddCommand(replCmd)
+
+	replCmd.Flags().BoolVarP(&print, "print", "p", false, "Print the evaluated statement")
 }

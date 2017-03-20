@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use:   "build",
@@ -26,5 +28,5 @@ extension .arc.`,
 func init() {
 	RootCmd.AddCommand(buildCmd)
 
-	// buildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	buildCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Log more build details")
 }

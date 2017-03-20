@@ -19,17 +19,12 @@ func New() *Simulator {
 	s := &Simulator{
 		registers: make(map[string]Register),
 	}
-
-	for i := 0; i < 32; i++ {
-		r := "r" + strconv.Itoa(i)
-		s.registers[r] = NewRegister()
-	}
-	s.registers["pc"] = NewRegister()
+	s.Reset()
 
 	return s
 }
 
-// Exec will parse and run the string on the Simulator.
+// Exec will parse and run the statement on the simulator.
 func (s *Simulator) Exec(stmt ast.Statement) error {
 	var err error
 	switch stmt.(type) {
@@ -40,10 +35,20 @@ func (s *Simulator) Exec(stmt ast.Statement) error {
 	case *ast.LabelStatement:
 		err = s.execLabelStatement(stmt.(*ast.LabelStatement))
 	default:
-		return fmt.Errorf("no logic implemented to run this type of statement")
+		return fmt.Errorf("not implemented")
 	}
 
 	return err
+}
+
+// Reset resets the Simulator. This will clear all registers and memory
+// allocations.
+func (s *Simulator) Reset() {
+	for i := 0; i < 32; i++ {
+		r := "r" + strconv.Itoa(i)
+		s.registers[r] = NewRegister()
+	}
+	s.registers["pc"] = NewRegister()
 }
 
 // State returns a string representation of the Simulators state.
@@ -52,11 +57,16 @@ func (s Simulator) State() string {
 
 	for i := 0; i < 32; i++ {
 		r := "r" + strconv.Itoa(i)
-		fmt.Fprintf(&buf, "%s:\t%s\n", r, s.registers[r].String())
+		fmt.Fprintf(&buf, "%s:\t%s\n", r, s.registers[r].Hex())
 	}
-	fmt.Fprintf(&buf, "%s:\t%s\n", "pc", s.registers["pc"].String())
+	fmt.Fprintf(&buf, "%s:\t%s\n", "pc", s.registers["pc"].Hex())
 
 	return buf.String()
+}
+
+// Usage returns a usage string.
+func (s Simulator) Usage() string {
+	return "Usage"
 }
 
 // execLoadStatement executes a ld command on the simulator.

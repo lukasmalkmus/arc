@@ -64,6 +64,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	}
 	p.next()
 
+	// Parse everything inbetween .begin and .end directives.
 	for p.tok != token.EOF {
 		// Linebreaks and comments might prepend a statement. Those are skipped.
 		if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok == token.END {
@@ -82,8 +83,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.next()
 	}
 
-	// Fast forward to next non-whitespace, non-newline, non-comment token.
-	// Last token must be EOF.
+	// Fast forward to next (and hopefully last) non-whitespace, non-newline,
+	// non-comment token. Last token must be EOF.
 	if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok != token.EOF {
 		return nil, p.newParseError(token.EOF)
 	}

@@ -296,7 +296,10 @@ func (p *Parser) parseInteger() (ast.Integer, error) {
 	}
 	i, err := strconv.ParseInt(p.lit, 10, 32)
 	if err != nil {
-		return 0, &ParseError{Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit), Pos: p.pos}
+		return 0, &ParseError{
+			Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit),
+			Pos:     p.pos,
+		}
 	}
 	return ast.Integer(i), nil
 }
@@ -331,7 +334,10 @@ func (p *Parser) parseSIMM13() (ast.Integer, error) {
 	}
 	val, err := strconv.ParseUint(p.lit, 0, 13)
 	if err != nil {
-		return 0, &ParseError{Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit), Pos: p.pos}
+		return 0, &ParseError{
+			Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit),
+			Pos:     p.pos,
+		}
 	}
 	return ast.Integer(val), nil
 }

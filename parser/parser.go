@@ -383,7 +383,9 @@ func (p *Parser) expectStatementEnd() error {
 // comment. It will error if the next token is not a comment, NL (newline) or
 // EOF token.
 func (p *Parser) expectStatementEndOrComment() error {
-	if p.next(); p.tok != token.COMMENT && p.tok != token.NL && p.tok != token.EOF {
+	if p.next(); p.tok == token.COMMENT {
+		p.unscan()
+	} else if p.tok != token.NL && p.tok != token.EOF {
 		return p.newParseError(token.COMMENT, token.NL, token.EOF)
 	}
 	return nil

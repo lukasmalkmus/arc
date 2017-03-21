@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/LukasMa/arc/build"
 	"github.com/spf13/cobra"
 )
 
@@ -17,11 +18,20 @@ directives. By convenience the program code should start
 at memory location 2048. Consider using the .org directive
 for this.
 
-A file containing ARC source code should be have the file
+A file containing ARC source code should have the file
 extension .arc.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("build called")
+		fmt.Println("WIP! NOT WOKRING YET!")
+
+		// TODO: It is only possible to build a single file at the moment!
+		if len(args) != 1 {
+			fmt.Println("Expected exactly one source file as argument!")
+		}
+
+		// Assemble file.
+		if err := build.AssembleFile(args[0], verbose); err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 

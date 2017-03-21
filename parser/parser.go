@@ -59,7 +59,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	p.scanIgnoreNewLine()
 
 	// Parse input line by line.
-	for p.tok != token.EOF || p.tok == token.END {
+	for p.tok != token.EOF {
 		// Parse statement.
 		stmt, err := p.parseStatement(true)
 		if err != nil {
@@ -67,7 +67,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		}
 		prog.Statements = append(prog.Statements, stmt)
 
-		// Next token. Linebreaks might prepend a statement. Those are skipped.
+		// Next token.
 		p.scanIgnoreNewLine()
 	}
 
@@ -87,26 +87,64 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 // reference another label.
 func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 	switch p.tok {
+	case token.COMMENT:
+		return p.parseCommentStatement()
 	case token.BEGIN:
-		return &ast.BeginStatement{}, nil
+		return p.parseBeginStatement()
 	case token.END:
-		return &ast.EndStatement{}, nil
+		return p.parseEndStatement()
 	case token.ORG:
 		return p.parseOrgStatement()
-
 	case token.IDENT:
 		if !withLabel {
 			return nil, nil
 		}
 		return p.parseLabelStatement()
-
 	case token.LOAD:
 		return p.parseLoadStatement()
 	case token.STORE:
 		return p.parseStoreStatement()
 	}
 
-	return nil, p.newParseError(token.Keywords()...)
+	// We expect a comment, an identifier, a directive or a keyword.
+	exp := []token.Token{token.COMMENT, token.IDENT}
+	exp = append(exp, token.Directives()...)
+	exp = append(exp, token.Keywords()...)
+
+	return nil, p.newParseError(exp...)
+}
+
+// parseCommentStatement parses an CommentStatement AST object.
+func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
+	stmt := &ast.CommentStatement{Text: p.lit}
+
+	// The comment should end after its literal value.
+	err := p.expectStatementEnd()
+
+	// Return the successfully parsed statement.
+	return stmt, err
+}
+
+// parseBeginStatement parses an BeginStatement AST object.
+func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
+	stmt := &ast.BeginStatement{}
+
+	// The directive should end after its literal value.
+	err := p.expectStatementEndOrComment()
+
+	// Return the successfully parsed statement.
+	return stmt, err
+}
+
+// parseEndStatement parses an EndStatement AST object.
+func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
+	stmt := &ast.EndStatement{}
+
+	// The directive should end after its literal value.
+	err := p.expectStatementEndOrComment()
+
+	// Return the successfully parsed statement.
+	return stmt, err
 }
 
 // parseOrgStatement parses an OrgStatement AST object.
@@ -120,13 +158,11 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 	}
 	stmt.Value = val
 
-	// Finally we should see the end of the statement.
-	if err := p.expectStatementEnd(); err != nil {
-		return nil, err
-	}
+	// Finally we should see the end of the directive.
+	err = p.expectStatementEndOrComment()
 
 	// Return the successfully parsed statement.
-	return stmt, nil
+	return stmt, err
 }
 
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
@@ -155,18 +191,17 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 		}
 		refStmt, valid := ref.(ast.Reference)
 		if !valid {
-			toks := append([]token.Token{token.INT}, token.Keywords()...)
-			return nil, p.newParseError(toks...)
+			exp := []token.Token{token.INT}
+			exp = append(exp, token.Keywords()...)
+			return nil, p.newParseError(exp...)
 		}
 		stmt.Reference = refStmt
 	}
 
 	// Finally we should see the end of the statement.
-	if err := p.expectStatementEnd(); err != nil {
-		return nil, err
-	}
+	err := p.expectStatementEndOrComment()
 
-	return stmt, nil
+	return stmt, err
 }
 
 // parseLoadStatement parses an LoadStatement AST object.
@@ -193,12 +228,10 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
-	if err := p.expectStatementEnd(); err != nil {
-		return nil, err
-	}
+	err = p.expectStatementEndOrComment()
 
 	// Return the successfully parsed statement.
-	return stmt, nil
+	return stmt, err
 }
 
 // parseStoreStatement parses an StoreStatement AST object.
@@ -225,12 +258,10 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
-	if err := p.expectStatementEnd(); err != nil {
-		return nil, err
-	}
+	err = p.expectStatementEndOrComment()
 
 	// Return the successfully parsed statement.
-	return stmt, nil
+	return stmt, err
 }
 
 // parseExpression parses an expression and creates an Expression AST object.
@@ -339,11 +370,21 @@ func (p *Parser) parseSIMM13() (ast.Integer, error) {
 	return ast.Integer(val), nil
 }
 
-// expectStatementEnd expectes the end of a statement and will error if the next
+// expectStatementEnd expectes the end of a statement. It will error if the next
 // token is not a NL (newline) or EOF token.
 func (p *Parser) expectStatementEnd() error {
 	if p.next(); p.tok != token.NL && p.tok != token.EOF {
 		return p.newParseError(token.NL, token.EOF)
+	}
+	return nil
+}
+
+// expectStatementEndOrComment expectes the end of a statement or a suffixing
+// comment. It will error if the next token is not a comment, NL (newline) or
+// EOF token.
+func (p *Parser) expectStatementEndOrComment() error {
+	if p.next(); p.tok != token.COMMENT && p.tok != token.NL && p.tok != token.EOF {
+		return p.newParseError(token.COMMENT, token.NL, token.EOF)
 	}
 	return nil
 }
@@ -365,15 +406,10 @@ func (p *Parser) scan() {
 	p.buf.tok, p.buf.lit, p.buf.pos = p.tok, p.lit, p.pos
 }
 
-// scanIgnoreNewLineComment scans the next non-whitespace,
-// non-newline, non-comment token.
+// scanIgnoreNewLineComment scans the next non-whitespace, non-newline token.
 func (p *Parser) scanIgnoreNewLine() {
-	for p.tok != token.EOF {
-		if p.tok == token.NL {
-			p.next()
-			continue
-		}
-		break
+	if p.next(); p.tok == token.NL {
+		p.next()
 	}
 }
 

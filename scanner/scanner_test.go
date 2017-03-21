@@ -13,10 +13,10 @@ import (
 
 func TestScanner_Scan(t *testing.T) {
 	tests := []struct {
-		str     string
-		Token   token.Token
-		Literal string
-		Line    int
+		str  string
+		tok  token.Token
+		lit  string
+		line int
 	}{
 		// Special tokens
 		{"#", token.ILLEGAL, "#", 1},
@@ -34,9 +34,9 @@ func TestScanner_Scan(t *testing.T) {
 		{"\n\n", token.NL, "\n\n", 2},     // Double newline (LF + LF)
 		{"\r\n\r\n", token.NL, "\n\n", 2}, // Double newline (CRLF + CRLF)
 		{"\nx", token.NL, "\n", 1},
-		{"!", token.COMMENT, "!", 1},
-		{"! My comment", token.COMMENT, "! My comment", 1},
-		{"!    My second comment", token.COMMENT, "!    My second comment", 1},
+		{"!", token.COMMENT, "", 1}, // Empty comment
+		{"! My comment", token.COMMENT, "My comment", 1},
+		{"!    My second comment   ", token.COMMENT, "My second comment", 1},
 
 		// Identifiers
 		{"x", token.IDENT, "x", 1},
@@ -83,9 +83,9 @@ func TestScanner_Scan(t *testing.T) {
 	for tc, tt := range tests {
 		s := New(strings.NewReader(tt.str))
 		tok, lit, pos := s.Scan()
-		equals(t, tc, tt.Token, tok)
-		equals(t, tc, tt.Literal, lit)
-		equals(t, tc, tt.Line, pos.Line)
+		equals(t, tc, tt.tok, tok)
+		equals(t, tc, tt.lit, lit)
+		equals(t, tc, tt.line, pos.Line)
 	}
 }
 

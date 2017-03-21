@@ -123,6 +123,15 @@ func (t Token) IsKeyword() bool { return keywordBeg < t && t < keywordEnd }
 // false otherwise.
 func (t Token) IsDirective() bool { return directiveBeg < t && t < directiveEnd }
 
+// Directives returns all tokens corresponding to directives.
+func Directives() []Token {
+	var buf []Token
+	for i := directiveBeg + 1; i < directiveEnd; i++ {
+		buf = append(buf, Token(i))
+	}
+	return buf
+}
+
 // Keywords returns all tokens corresponding to keywords.
 func Keywords() []Token {
 	var buf []Token

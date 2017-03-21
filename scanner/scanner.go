@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strings"
 
 	"github.com/LukasMa/arc/token"
 )
@@ -88,17 +89,23 @@ func (s *Scanner) scanComment() (token.Token, string, token.Pos) {
 	buf.WriteRune(ch)
 
 	// Read every subsequent character into the buffer.
-	// EOF will cause the loop to exit.
+	// Newline or EOF will cause the loop to exit.
 	for {
-		if ch, _ := s.read(); ch == eof {
+		if ch, _ := s.read(); ch == eof || isNewline(ch) {
+			s.unread()
 			break
 		} else {
 			buf.WriteRune(ch)
 		}
 	}
 
+	// Extract the actual comment by dropping the "!" which is always the first
+	// sign. The text gets trimmed.
+	com := buf.String()[1:buf.Len()]
+	com = strings.TrimSpace(com)
+
 	// Return comment with text as literal value.
-	return token.COMMENT, buf.String(), pos
+	return token.COMMENT, com, pos
 }
 
 // scanDirective consumes the current rune and all contiguous directive runes.

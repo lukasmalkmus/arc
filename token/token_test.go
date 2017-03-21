@@ -61,6 +61,12 @@ func TestToken(t *testing.T) {
 	}
 }
 
+func TestDirectives(t *testing.T) {
+	for _, tok := range Directives() {
+		assert(t, tok.IsDirective(), "Returned token isn't a directive!", tok)
+	}
+}
+
 func TestKeywords(t *testing.T) {
 	for _, tok := range Keywords() {
 		assert(t, tok.IsKeyword(), "Returned token isn't a keyword!", tok)

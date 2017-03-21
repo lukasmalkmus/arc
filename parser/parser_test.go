@@ -27,8 +27,7 @@ func TestParserBuffer(t *testing.T) {
 	equals(t, 0, pos, bufPos)
 }
 
-// TestParse will validate that linebreaks don't break the parser and directives
-// are detected correctly.
+// TestParse will validate the correct parsing of a complete program.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		prog string
@@ -43,13 +42,19 @@ func TestParse(t *testing.T) {
 		{
 			prog: `
 		.begin
-
+		! A comment above the statement
 		ld %r1, %r2
 
+		st %r2, %r3 ! A comment behind the statement
 
-		ld %r2, %r3
+
+		! Another comment above the comment
+		ld %r3, %r4 ! Another comment behind the statement
 
 		.end
+
+		! This is valid
+		st %r4, %r5
 
 		`,
 			err: ``,
@@ -62,6 +67,28 @@ func TestParse(t *testing.T) {
 	}
 }
 
+// TestParseCommentStatement validates the correct parsing of the begin directive.
+func TestParseCommentStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Text: "This is a comment"}},
+		{str: "This is not a comment", err: `line 1: found IDENT ("is"), expected ":"`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if commentStmt, valid := tt.stmt.(*ast.CommentStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, commentStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
 // TestParseBeginStatement validates the correct parsing of the begin directive.
 func TestParseBeginStatement(t *testing.T) {
 	tests := []struct {
@@ -70,7 +97,7 @@ func TestParseBeginStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".begin", stmt: &ast.BeginStatement{}},
-		{str: ".beg", err: `line 1: found ILLEGAL (".beg"), expected "ld", "st", "add", "sub"`},
+		{str: ".beg", err: `line 1: found ILLEGAL (".beg"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "begin", err: `line 1: found EOF, expected ":"`},
 	}
 
@@ -93,7 +120,7 @@ func TestParseEndStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".end", stmt: &ast.EndStatement{}},
-		{str: ".ed", err: `line 1: found ILLEGAL (".ed"), expected "ld", "st", "add", "sub"`},
+		{str: ".ed", err: `line 1: found ILLEGAL (".ed"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "end", err: `line 1: found EOF, expected ":"`},
 	}
 
@@ -116,9 +143,9 @@ func TestParseOrgStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".org 2048", stmt: &ast.OrgStatement{Value: ast.Integer(2048)}},
-		{str: ".org 2048 128", err: `line 1: found INTEGER ("128"), expected NEWLINE, EOF`},
+		{str: ".org 2048 128", err: `line 1: found INTEGER ("128"), expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `line 1: found EOF, expected INTEGER`},
-		{str: ".og", err: `line 1: found ILLEGAL (".og"), expected "ld", "st", "add", "sub"`},
+		{str: ".og", err: `line 1: found ILLEGAL (".og"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "org", err: `line 1: found EOF, expected ":"`},
 	}
 
@@ -153,7 +180,7 @@ func TestParseLabelStatement(t *testing.T) {
 				}},
 		},
 		{str: "x: y: 25", err: `line 1: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
-		{str: "x: 25;", err: `line 1: found ILLEGAL (";"), expected NEWLINE, EOF`},
+		{str: "x: 25;", err: `line 1: found ILLEGAL (";"), expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `line 1: found EOF, expected "[", IDENT`},
 		{str: "X: 90000000000000", err: `line 1: integer 90000000000000 overflows 32 bit integer`},
 	}
@@ -222,11 +249,11 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "ld %r1, %r2, %r3",
-			err: `line 1: found ",", expected NEWLINE, EOF`,
+			err: `line 1: found ",", expected COMMENT, NEWLINE, EOF`,
 		},
 		{
 			str: "\nld %r1, %r2",
-			err: `line 1: found NEWLINE, expected "ld", "st", "add", "sub"`,
+			err: `line 1: found NEWLINE, expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -294,11 +321,11 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "st %r2, %r1, %r3",
-			err: `line 1: found ",", expected NEWLINE, EOF`,
+			err: `line 1: found ",", expected COMMENT, NEWLINE, EOF`,
 		},
 		{
 			str: "\nst %r2, %r1",
-			err: `line 1: found NEWLINE, expected "ld", "st", "add", "sub"`,
+			err: `line 1: found NEWLINE, expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
 		},
 	}
 

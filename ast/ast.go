@@ -14,12 +14,13 @@ type Statement interface {
 	String() string
 }
 
-func (*BeginStatement) stmt() {}
-func (*EndStatement) stmt()   {}
-func (*OrgStatement) stmt()   {}
-func (*LabelStatement) stmt() {}
-func (*LoadStatement) stmt()  {}
-func (*StoreStatement) stmt() {}
+func (*CommentStatement) stmt() {}
+func (*BeginStatement) stmt()   {}
+func (*EndStatement) stmt()     {}
+func (*OrgStatement) stmt()     {}
+func (*LabelStatement) stmt()   {}
+func (*LoadStatement) stmt()    {}
+func (*StoreStatement) stmt()   {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -64,6 +65,16 @@ type Program struct {
 
 // String returns a string representation of the program.
 func (p Program) String() string { return p.Statements.String() }
+
+// CommentStatement represents a comment.
+type CommentStatement struct {
+	// Text is the actual text of the comment.
+	Text string
+}
+
+func (stmt CommentStatement) String() string {
+	return "! " + stmt.Text
+}
 
 // BeginStatement marks the beginning of an ARC program.
 type BeginStatement struct{}

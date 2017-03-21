@@ -59,11 +59,21 @@ func TestParse(t *testing.T) {
 		`,
 			err: ``,
 		},
+		{
+			prog: `.begin
+		ld %r1 %r2
+		.end`,
+			err: `line 2: found IDENT ("%r2"), expected ","`,
+		},
 	}
 
 	for tc, tt := range tests {
-		_, err := Parse(tt.prog)
-		ok(t, tc, err)
+		prog, err := Parse(tt.prog)
+		if prog != nil {
+			ok(t, tc, err)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
 	}
 }
 

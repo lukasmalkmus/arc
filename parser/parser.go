@@ -50,28 +50,16 @@ func ParseStatement(s string) (ast.Statement, error) {
 	return New(strings.NewReader(s)).ParseStatement()
 }
 
-// Parse parses lexical tokens into a Program AST object.
+// Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{}
 
-	// Read first token.
-	p.next()
+	// Read the first token. Linebreaks might prepend a statement. Those are
+	// skipped.
+	p.scanIgnoreNewLine()
 
-	// Fast forward to first non-whitespace, non-newline, non-comment token.
-	// First token must be .begin directive.
-	if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok != token.BEGIN {
-		return nil, p.newParseError(token.BEGIN)
-	}
-	p.next()
-
-	// Parse everything inbetween .begin and .end directives.
-	for p.tok != token.EOF {
-		// Linebreaks and comments might prepend a statement. Those are skipped.
-		if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok == token.END {
-			p.next()
-			break
-		}
-
+	// Parse input line by line.
+	for p.tok != token.EOF || p.tok == token.END {
 		// Parse statement.
 		stmt, err := p.parseStatement(true)
 		if err != nil {
@@ -79,14 +67,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		}
 		prog.Statements = append(prog.Statements, stmt)
 
-		// Next token.
-		p.next()
-	}
-
-	// Fast forward to next (and hopefully last) non-whitespace, non-newline,
-	// non-comment token. Last token must be EOF.
-	if p.scanIgnoreWhiteSpaceNewLineComment(); p.tok != token.EOF {
-		return nil, p.newParseError(token.EOF)
+		// Next token. Linebreaks might prepend a statement. Those are skipped.
+		p.scanIgnoreNewLine()
 	}
 
 	return prog, nil
@@ -94,14 +76,15 @@ func (p *Parser) Parse() (*ast.Program, error) {
 
 // ParseStatement parses lexical tokens into a Statement AST object.
 func (p *Parser) ParseStatement() (ast.Statement, error) {
-	// Inspect the first token.
+	// Read the first token.
 	p.next()
 	return p.parseStatement(true)
 }
 
 // parseStatement parses lexical tokens into a Statement AST object. Parsing
 // identifiers into LabelStatement AST objects can be turned off by passing
-// true.
+// false. This is useful for avoiding recursive parsing of labels. Labels can't
+// reference another label.
 func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 	switch p.tok {
 	case token.BEGIN:
@@ -382,11 +365,11 @@ func (p *Parser) scan() {
 	p.buf.tok, p.buf.lit, p.buf.pos = p.tok, p.lit, p.pos
 }
 
-// scanIgnoreWhiteSpaceNewLineComment scans the next non-whitespace,
+// scanIgnoreNewLineComment scans the next non-whitespace,
 // non-newline, non-comment token.
-func (p *Parser) scanIgnoreWhiteSpaceNewLineComment() {
+func (p *Parser) scanIgnoreNewLine() {
 	for p.tok != token.EOF {
-		if p.tok == token.NL || p.tok == token.COMMENT {
+		if p.tok == token.NL {
 			p.next()
 			continue
 		}

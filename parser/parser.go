@@ -101,23 +101,89 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 
 // parseStatement parses lexical tokens into a Statement AST object. Parsing
 // identifiers into LabelStatement AST objects can be turned off by passing
-// true. This will return an empty LabelStatement.
+// true.
 func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 	switch p.tok {
-	case token.COMMENT:
-		// nop
+	case token.BEGIN:
+		return &ast.BeginStatement{}, nil
+	case token.END:
+		return &ast.EndStatement{}, nil
+	case token.ORG:
+		return p.parseOrgStatement()
+
+	case token.IDENT:
+		if !withLabel {
+			return nil, nil
+		}
+		return p.parseLabelStatement()
+
 	case token.LOAD:
 		return p.parseLoadStatement()
 	case token.STORE:
 		return p.parseStoreStatement()
-	case token.IDENT:
-		if !withLabel {
-			return &ast.LabelStatement{}, nil
-		}
-		return p.parseLabelStatement()
 	}
 
 	return nil, p.newParseError(token.Keywords()...)
+}
+
+// parseOrgStatement parses an OrgStatement AST object.
+func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
+	stmt := &ast.OrgStatement{}
+
+	// The directive should be followed by an integer.
+	val, err := p.parseInteger()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Value = val
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEnd(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
+	stmt := &ast.LabelStatement{}
+
+	stmt.Ident = &ast.Identifier{Value: p.lit}
+
+	// Labels end with a colon (assignment).
+	if p.next(); p.tok != token.COLON {
+		return nil, p.newParseError(token.COLON)
+	}
+
+	// We either want an integer or a statement.
+	// TODO: We need a string datatype!
+	if p.next(); p.tok == token.INT {
+		p.unscan()
+		ref, err := p.parseInteger()
+		if err != nil {
+			return nil, err
+		}
+		stmt.Reference = ref
+	} else {
+		ref, err := p.parseStatement(false)
+		if err != nil {
+			return nil, err
+		}
+		refStmt, valid := ref.(ast.Reference)
+		if !valid {
+			toks := append([]token.Token{token.INT}, token.Keywords()...)
+			return nil, p.newParseError(toks...)
+		}
+		stmt.Reference = refStmt
+	}
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEnd(); err != nil {
+		return nil, err
+	}
+
+	return stmt, nil
 }
 
 // parseLoadStatement parses an LoadStatement AST object.
@@ -181,46 +247,6 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	}
 
 	// Return the successfully parsed statement.
-	return stmt, nil
-}
-
-func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
-	stmt := &ast.LabelStatement{}
-
-	stmt.Ident = &ast.Identifier{Value: p.lit}
-
-	// Labels end with a colon (assignment).
-	if p.next(); p.tok != token.COLON {
-		return nil, p.newParseError(token.COLON)
-	}
-
-	// We either want an integer or a statement.
-	// TODO: We need a string datatype!
-	if p.next(); p.tok == token.INT {
-		p.unscan()
-		ref, err := p.parseInteger()
-		if err != nil {
-			return nil, err
-		}
-		stmt.Reference = ref
-	} else {
-		ref, err := p.parseStatement(false)
-		if err != nil {
-			return nil, err
-		}
-		refStmt, valid := ref.(ast.Reference)
-		if !valid {
-			toks := append([]token.Token{token.INT}, token.Keywords()...)
-			return nil, p.newParseError(toks...)
-		}
-		stmt.Reference = refStmt
-	}
-
-	// Finally we should see the end of the statement.
-	if err := p.expectStatementEnd(); err != nil {
-		return nil, err
-	}
-
 	return stmt, nil
 }
 

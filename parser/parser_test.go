@@ -14,19 +14,21 @@ import (
 
 var errExp = errors.New("Expecting error")
 
-// Test if the correct token is returned after an unscan().
+// TestParserBuffer tests if the correct token is returned after an unscan().
 func TestParserBuffer(t *testing.T) {
 	test := `ld %r1, %r2`
 	p := New(strings.NewReader(test))
 	p.scan()
-	tok, lit := p.tok, p.lit
+	tok, lit, pos := p.tok, p.lit, p.pos
 	p.unscan()
-	bufTok, bufLit := p.buf.tok, p.buf.lit
+	bufTok, bufLit, bufPos := p.buf.tok, p.buf.lit, p.buf.pos
 	equals(t, 0, tok, bufTok)
 	equals(t, 0, lit, bufLit)
+	equals(t, 0, pos, bufPos)
 }
 
-// TestParse wiprog: `.ll validate that linebreaks, etc. don't break the parser.
+// TestParse will validate that linebreaks don't break the parser and directives
+// are detected correctly.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		prog string
@@ -57,6 +59,113 @@ func TestParse(t *testing.T) {
 	for tc, tt := range tests {
 		_, err := Parse(tt.prog)
 		ok(t, tc, err)
+	}
+}
+
+// TestParseBeginStatement validates the correct parsing of the begin directive.
+func TestParseBeginStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{str: ".begin", stmt: &ast.BeginStatement{}},
+		{str: ".beg", err: `line 1: found ILLEGAL (".beg"), expected "ld", "st", "add", "sub"`},
+		{str: "begin", err: `line 1: found EOF, expected ":"`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if beginStmt, valid := tt.stmt.(*ast.BeginStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, beginStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseEndStatement validates the correct parsing of the end directive.
+func TestParseEndStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{str: ".end", stmt: &ast.EndStatement{}},
+		{str: ".ed", err: `line 1: found ILLEGAL (".ed"), expected "ld", "st", "add", "sub"`},
+		{str: "end", err: `line 1: found EOF, expected ":"`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if endStmt, valid := tt.stmt.(*ast.EndStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, endStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseOrgStatement validates the correct parsing of the org directive.
+func TestParseOrgStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{str: ".org 2048", stmt: &ast.OrgStatement{Value: ast.Integer(2048)}},
+		{str: ".org 2048 128", err: `line 1: found INTEGER ("128"), expected NEWLINE, EOF`},
+		{str: ".org", err: `line 1: found EOF, expected INTEGER`},
+		{str: ".og", err: `line 1: found ILLEGAL (".og"), expected "ld", "st", "add", "sub"`},
+		{str: "org", err: `line 1: found EOF, expected ":"`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if orgStmt, valid := tt.stmt.(*ast.OrgStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, orgStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseLabelStatement validates the correct parsing of st commands.
+func TestParseLabelStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str:  "x: 25",
+			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "x"}, Reference: ast.Integer(25)},
+		},
+		{
+			str: "mylabel: ld %r1, %r2",
+			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "mylabel"},
+				Reference: &ast.LoadStatement{
+					Source:      &ast.Identifier{Value: "%r1"},
+					Destination: &ast.Identifier{Value: "%r2"},
+				}},
+		},
+		{str: "x: y: 25", err: `line 1: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
+		{str: "x: 25;", err: `line 1: found ILLEGAL (";"), expected NEWLINE, EOF`},
+		{str: "x: ld", err: `line 1: found EOF, expected "[", IDENT`},
+		{str: "X: 90000000000000", err: `line 1: integer 90000000000000 overflows 32 bit integer`},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, labelStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
 	}
 }
 
@@ -198,42 +307,6 @@ func TestParseStoreStatement(t *testing.T) {
 		if loadStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
 			ok(t, tc, err)
 			equals(t, tc, loadStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
-	}
-}
-
-// TestParseLabelStatement validates the correct parsing of st commands.
-func TestParseLabelStatement(t *testing.T) {
-	tests := []struct {
-		str  string
-		stmt ast.Statement
-		err  string
-	}{
-		{
-			str:  "x: 25",
-			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "x"}, Reference: ast.Integer(25)},
-		},
-		{
-			str: "mylabel: ld %r1, %r2",
-			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Value: "mylabel"},
-				Reference: &ast.LoadStatement{
-					Source:      &ast.Identifier{Value: "%r1"},
-					Destination: &ast.Identifier{Value: "%r2"},
-				}},
-		},
-		{str: "x: y: 25", err: `line 1: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
-		{str: "x: 25;", err: `line 1: found ILLEGAL (";"), expected NEWLINE, EOF`},
-		{str: "x: ld", err: `line 1: found EOF, expected "[", IDENT`},
-		{str: "X: 90000000000000", err: `line 1: integer 90000000000000 overflows 32 bit integer`},
-	}
-
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, labelStmt, stmt)
 		} else {
 			equals(t, tc, tt.err, err.Error())
 		}

@@ -14,6 +14,9 @@ type Statement interface {
 	String() string
 }
 
+func (*BeginStatement) stmt() {}
+func (*EndStatement) stmt()   {}
+func (*OrgStatement) stmt()   {}
 func (*LabelStatement) stmt() {}
 func (*LoadStatement) stmt()  {}
 func (*StoreStatement) stmt() {}
@@ -62,11 +65,38 @@ type Program struct {
 // String returns a string representation of the program.
 func (p Program) String() string { return p.Statements.String() }
 
+// BeginStatement marks the beginning of an ARC program.
+type BeginStatement struct{}
+
+func (stmt BeginStatement) String() string {
+	return ".begin"
+}
+
+// EndStatement marks the end of an ARC program.
+type EndStatement struct{}
+
+func (stmt EndStatement) String() string {
+	return ".end"
+}
+
+// OrgStatement marks a new section of data in memory.
+type OrgStatement struct {
+	// Value is the memory location.
+	Value Integer
+}
+
+func (stmt OrgStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString(".org ")
+	buf.WriteString(stmt.Value.String())
+	return buf.String()
+}
+
 // LabelStatement represents a label.
 type LabelStatement struct {
 	// Ident is the labels identifier.
 	Ident *Identifier
-	// Reference is an Identifier, Integer or the Statement, the label addresses.
+	// Reference is an Identifier, Integer or the Statement the label addresses.
 	Reference Reference
 }
 

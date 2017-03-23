@@ -168,7 +168,7 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	stmt := &ast.LabelStatement{}
 
-	stmt.Ident = &ast.Identifier{Value: p.lit}
+	stmt.Ident = &ast.Identifier{Name: p.lit}
 
 	// Labels end with a colon (assignment).
 	if p.next(); p.tok != token.COLON {
@@ -220,8 +220,8 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// Next we should see the destination identifier.
-	dest, err := p.parseIdent()
+	// Next we should see the destination register.
+	dest, err := p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
@@ -238,8 +238,8 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt := &ast.StoreStatement{}
 
-	// First we should see the destination identifier.
-	src, err := p.parseIdent()
+	// First we should see the source register.
+	src, err := p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// Next we should see the source memory location.
+	// Next we should see the destination memory location.
 	dest, err := p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
@@ -273,16 +273,23 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 		return nil, p.newParseError(token.LBRACKET)
 	}
 
-	// Opening bracket is followed by identifier.
-	ident, err := p.parseIdent()
-	if err != nil {
-		return nil, err
+	// Opening bracket is followed by identifer or register. Checking errors of
+	// the parse functions isn't required here, becasue we have already checked
+	// for the correct token.
+	if p.next(); p.tok == token.IDENT {
+		p.unscan()
+		ident, _ := p.parseIdent()
+		exp.Base = ident
+	} else if p.tok == token.REG {
+		p.unscan()
+		reg, _ := p.parseRegister()
+		exp.Base = reg
+	} else {
+		return nil, p.newParseError(token.IDENT, token.REG)
 	}
-	exp.Ident = ident
 
-	// After the identifier we expect a closing bracket which indicates a
-	// direct expression or an operator which indicates an offset
-	// expression.
+	// After the base we expect a closing bracket which indicates a direct
+	// expression or an operator which indicates an offset expression.
 	if p.next(); p.tok != token.RBRACKET {
 		// If we don't see the closing square bracket, we expect to see an
 		// operator.
@@ -314,7 +321,15 @@ func (p *Parser) parseIdent() (*ast.Identifier, error) {
 	if p.next(); p.tok != token.IDENT {
 		return nil, p.newParseError(token.IDENT)
 	}
-	return &ast.Identifier{Value: p.lit}, nil
+	return &ast.Identifier{Name: p.lit}, nil
+}
+
+// parseRegister parses a register and creates a Register AST object.
+func (p *Parser) parseRegister() (*ast.Register, error) {
+	if p.next(); p.tok != token.REG {
+		return nil, p.newParseError(token.REG)
+	}
+	return &ast.Register{Name: p.lit}, nil
 }
 
 // parseInteger parses an integer and returns an Integer AST object.
@@ -338,7 +353,7 @@ func (p *Parser) parseMemoryLocation() (ast.MemoryLocation, error) {
 	var memLoc ast.MemoryLocation
 
 	// We either expect a left bracket which opens a direct or an offset
-	// expression or a bare identifier which indicates an indirect expression.
+	// expression or a register which indicates an indirect expression.
 	if p.next(); p.tok == token.LBRACKET {
 		p.unscan()
 		exp, err := p.parseExpression()
@@ -346,10 +361,10 @@ func (p *Parser) parseMemoryLocation() (ast.MemoryLocation, error) {
 			return nil, err
 		}
 		memLoc = exp
-	} else if p.tok == token.IDENT {
-		memLoc = &ast.Identifier{Value: p.lit}
+	} else if p.tok == token.REG {
+		memLoc = &ast.Register{Name: p.lit}
 	} else {
-		return nil, p.newParseError(token.LBRACKET, token.IDENT)
+		return nil, p.newParseError(token.LBRACKET, token.REG)
 	}
 
 	return memLoc, nil

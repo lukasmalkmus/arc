@@ -37,7 +37,7 @@ func (*Identifier) ref()     {}
 func (Integer) ref()         {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
-// memory. A single identifier can be addressed as well as expressions.
+// memory. An identifier can be addressed as well as expressions and registers.
 type MemoryLocation interface {
 	memLoc()
 	String() string
@@ -45,6 +45,19 @@ type MemoryLocation interface {
 
 func (*Expression) memLoc() {}
 func (*Identifier) memLoc() {}
+func (*Register) memLoc()   {}
+
+// ExpressionBase is implemented by types which casn be the base values of
+// expressions. These are identifiers and registers.
+type ExpressionBase interface {
+	// epb is unexported to ensure implementations of Reference can only
+	// originate in this package.
+	epb()
+	String() string
+}
+
+func (*Identifier) epb() {}
+func (*Register) epb()   {}
 
 // Statements is a list of statements.
 type Statements []Statement
@@ -113,7 +126,7 @@ type LabelStatement struct {
 
 func (stmt LabelStatement) String() string {
 	var buf bytes.Buffer
-	buf.WriteString(stmt.Ident.Value)
+	buf.WriteString(stmt.Ident.String())
 	buf.WriteString(": ")
 	buf.WriteString(stmt.Reference.String())
 	return buf.String()
@@ -124,7 +137,7 @@ type LoadStatement struct {
 	// Source is the memory location where the value is loaded from.
 	Source MemoryLocation
 	// Destination is the register where the value is loaded to.
-	Destination *Identifier
+	Destination *Register
 }
 
 // String returns a string representation of the statement.
@@ -140,7 +153,7 @@ func (stmt LoadStatement) String() string {
 // StoreStatement represents a store command (st).
 type StoreStatement struct {
 	// Source is the register where the value is stored from.
-	Source *Identifier
+	Source *Register
 	// Destination is the memory location where the value is stored to.
 	Destination MemoryLocation
 }
@@ -158,8 +171,8 @@ func (stmt StoreStatement) String() string {
 // Expression is an expression which bundles an identifier with an offset. In
 // ARC an expression is delimited by an opening and a closing square bracket.
 type Expression struct {
-	// Ident is the identifier used in the expression.
-	Ident *Identifier
+	// Base is the register or identifer used as base in the expression.
+	Base ExpressionBase
 	// Operator is the operator which is used in the expression.
 	Operator string
 	// Offset is the second operand.
@@ -169,7 +182,7 @@ type Expression struct {
 func (e Expression) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("[")
-	buf.WriteString(e.Ident.String())
+	buf.WriteString(e.Base.String())
 	buf.WriteString(e.Operator)
 	buf.WriteString(strconv.FormatInt(int64(e.Offset), 10))
 	buf.WriteString("]")
@@ -178,13 +191,23 @@ func (e Expression) String() string {
 
 // Identifier is a named identifier.
 type Identifier struct {
-	// Value is the name of the identifier.
-	Value string
+	// Name is the name of the identifier.
+	Name string
 }
 
 // String returns a string representation of the identifier.
 func (i Identifier) String() string {
-	return i.Value
+	return i.Name
+}
+
+// Register is an ARC Register.
+type Register struct {
+	// Name is the name/identifier of the register.
+	Name string
+}
+
+func (r Register) String() string {
+	return "%" + r.Name
 }
 
 // Integer represents a 32 bit integer value.

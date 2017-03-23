@@ -24,6 +24,8 @@ func TestScanner_Scan(t *testing.T) {
 		{"_123", token.ILLEGAL, "_", 1},
 		{".", token.ILLEGAL, ".", 1},
 		{".123", token.ILLEGAL, ".", 1},
+		{"%%", token.ILLEGAL, "", 1},  // No ident after register char
+		{"%2", token.ILLEGAL, "2", 1}, // First ident char is not a letter
 		{"", token.EOF, "", 1},
 		{" ", token.WS, " ", 1},
 		{"   ", token.WS, "   ", 1},
@@ -45,6 +47,10 @@ func TestScanner_Scan(t *testing.T) {
 		{"r1", token.IDENT, "r1", 1},
 		{"r10", token.IDENT, "r10", 1},
 		{"r31", token.IDENT, "r31", 1},
+		{"%r1", token.REG, "r1", 1},
+		{"%r10", token.REG, "r10", 1},
+		{"%r31", token.REG, "r31", 1},
+		{"%pc", token.REG, "pc", 1},
 		{"4", token.INT, "4", 1},
 		{"8", token.INT, "8", 1},
 		{"12", token.INT, "12", 1},

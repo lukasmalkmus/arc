@@ -20,7 +20,8 @@ const (
 
 	// Identifiers and type literals
 	literalBeg
-	IDENT // x, y, abc, foo_bar, %r1, %r2
+	IDENT // x, y, abc, foo_bar
+	REG   // %r1, %r2, %pc
 	INT   // 12345
 	literalEnd
 
@@ -62,6 +63,7 @@ var tokens = [...]string{
 
 	// Identifiers and type literals
 	IDENT: "IDENT",
+	REG:   "REGISTER",
 	INT:   "INTEGER",
 
 	// Operators

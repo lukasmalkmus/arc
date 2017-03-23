@@ -27,6 +27,7 @@ func TestToken(t *testing.T) {
 
 		// Identifiers and type literals
 		{"IDENT", IDENT, false, true, false, false, false},
+		{"REGISTER", REG, false, true, false, false, false},
 		{"INTEGER", INT, false, true, false, false, false},
 
 		// Operators
@@ -81,7 +82,8 @@ func TestLookup(t *testing.T) {
 	}{
 		// Identifiers
 		{"abc", false, false},
-		{"abc", false, false},
+		{"123", false, false},
+		{"%r1", false, false},
 
 		// Keywords
 		{"ld", true, false},

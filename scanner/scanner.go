@@ -51,12 +51,15 @@ func (s *Scanner) Scan() (token.Token, string, token.Pos) {
 	} else if ch == '.' {
 		s.unread()
 		return s.scanDirective()
+	} else if isLetter(ch) {
+		s.unread()
+		return s.scanIdent()
 	} else if isDigit(ch) {
 		s.unread()
 		return s.scanInteger()
-	} else if isLetter(ch) || ch == '%' {
+	} else if ch == '%' {
 		s.unread()
-		return s.scanIdent()
+		return s.scanRegister()
 	}
 
 	// Otherwise read the individual character.
@@ -83,10 +86,9 @@ func (s *Scanner) Scan() (token.Token, string, token.Pos) {
 
 // scanComment consumes the current rune and all contiguous comment runes.
 func (s *Scanner) scanComment() (token.Token, string, token.Pos) {
-	// Create a buffer and read the current character into it.
+	// Create a buffer and drop first character.
 	var buf bytes.Buffer
-	ch, pos := s.read()
-	buf.WriteRune(ch)
+	_, pos := s.read()
 
 	// Read every subsequent character into the buffer.
 	// Newline or EOF will cause the loop to exit.
@@ -99,13 +101,11 @@ func (s *Scanner) scanComment() (token.Token, string, token.Pos) {
 		}
 	}
 
-	// Extract the actual comment by dropping the "!" which is always the first
-	// sign. The text gets trimmed.
-	com := buf.String()[1:buf.Len()]
-	com = strings.TrimSpace(com)
+	// Trim comment text for better readability.
+	lit := strings.TrimSpace(buf.String())
 
 	// Return comment with text as literal value.
-	return token.COMMENT, com, pos
+	return token.COMMENT, lit, pos
 }
 
 // scanDirective consumes the current rune and all contiguous directive runes.
@@ -222,6 +222,39 @@ func (s *Scanner) scanNewline() (token.Token, string, token.Pos) {
 	pos.Line += buf.Len() - 1
 
 	return token.NL, buf.String(), pos
+}
+
+// scanRegister consumes the current rune and all contiguous register ident
+// runes.
+func (s *Scanner) scanRegister() (token.Token, string, token.Pos) {
+	// Create a buffer and drop first character.
+	var buf bytes.Buffer
+	_, pos := s.read()
+
+	// Read every subsequent ident character into the buffer.
+	// Non-ident characters and EOF will cause the loop to exit.
+	for {
+		if ch, _ := s.read(); ch == eof {
+			break
+		} else if !isLetter(ch) && !isDigit(ch) {
+			s.unread()
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+
+	// No identifier after % char is not a valid register.
+	if buf.Len() < 1 {
+		return token.ILLEGAL, buf.String(), pos
+	}
+
+	// First identifier char must be a letter.
+	if ch := buf.Bytes()[0]; !isLetter(rune(ch)) {
+		return token.ILLEGAL, buf.String(), pos
+	}
+
+	return token.REG, buf.String(), pos
 }
 
 // scanWhitespace consumes the current rune and all contiguous whitespace.

@@ -28,12 +28,12 @@ func New() *Simulator {
 func (s *Simulator) Exec(stmt ast.Statement) error {
 	var err error
 	switch stmt.(type) {
+	case *ast.LabelStatement:
+		err = s.execLabelStatement(stmt.(*ast.LabelStatement))
 	case *ast.LoadStatement:
 		err = s.execLoadStatement(stmt.(*ast.LoadStatement))
 	case *ast.StoreStatement:
 		err = s.execStoreStatement(stmt.(*ast.StoreStatement))
-	case *ast.LabelStatement:
-		err = s.execLabelStatement(stmt.(*ast.LabelStatement))
 	default:
 		return fmt.Errorf("not implemented")
 	}

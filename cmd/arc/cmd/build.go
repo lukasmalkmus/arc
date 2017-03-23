@@ -4,35 +4,51 @@ import (
 	"fmt"
 
 	"github.com/LukasMa/arc/build"
+	"github.com/LukasMa/arc/util"
 	"github.com/spf13/cobra"
 )
 
 var verbose bool
 
-// buildCmd represents the build command
+// buildCmd represents the build command.
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Build an ARC program from an ARC source file",
-	Long: `A valid ARC program must be enclosed by the .begin and .end
-directives. By convenience the program code should start
-at memory location 2048. Consider using the .org directive
-for this.
+	Short: "Assemble ARC source code",
+	Long: `Build assembles ARC source code. A valid ARC program must
+be enclosed by the .begin and .end directives. By
+convenience the program code should start at memory
+location 2048. Consider using the .org directive for this.
 
-A file containing ARC source code should have the file
-extension .arc.`,
+Every argument to this command is expected to be a valid
+ARC source file. Passing no argument will assemble every
+single file having the .arc file extension in the current
+directory.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("WIP! NOT WOKRING YET!")
 
-		// TODO: It is only possible to build a single file at the moment!
-		if len(args) != 1 {
-			fmt.Println("Expected exactly one source file as argument!")
+		// Assemble every file given.
+		if len(args) > 0 {
+			for _, file := range args {
+				if err := build.AssembleFile(file, verbose); err != nil {
+					fmt.Println(err)
+				}
+			}
+			return
 		}
 
-		// Assemble file.
-		if err := build.AssembleFile(args[0], verbose); err != nil {
+		// Read all files in current directory and assemble them.
+		files, err := util.ReadCurDir()
+		if err != nil {
 			fmt.Println(err)
+			return
+		}
+		for _, file := range files {
+			if err := build.AssembleFile(file, verbose); err != nil {
+				fmt.Println(err)
+			}
 		}
 	},
+	SuggestFor: []string{"assemble, compile"},
 }
 
 func init() {

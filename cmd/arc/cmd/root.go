@@ -12,9 +12,8 @@ var RootCmd = &cobra.Command{
 	Short: "Arc is a tool for managing ARC assembly source code",
 	Long: `Arc is a tool for managing ARC assembly source code.
 
-It offers features like building an ARC program from ARC
-source code, running an ARC program on the simulator and
-an interactive mode.`,
+It offers features like assembling, formating and vetting
+of ARC source code as well as an interactive mode (repl).`,
 }
 
 // Execute adds all child commands to the root command and sets flags

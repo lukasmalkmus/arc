@@ -6,16 +6,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Version is the version of the arc tool.
-var Version = "0.1"
+var (
+	// Version is the version of the arc application.
+	Version = "0.1"
 
-// versionCmd represents the version command
+	// Author is the Author of the application.
+	Author = "Lukas Malkmus <mail@lukasmalkmus.com>"
+
+	// License  is the applications license.
+	License = "MIT"
+)
+
+// versionCmd represents the version command.
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version of the arc tool",
-	Long:  `Print the version of the arc tool.`,
+	Short: "Print version of the arc tool",
+	Long:  `Prints the version of the arc tool.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("arc version %s\n", Version)
+		fmt.Printf("Arc version %s\n\n", Version)
+		fmt.Printf("© %s\n\n", Author)
+		fmt.Printf("Distributed under %s license\n", License)
 	},
 }
 

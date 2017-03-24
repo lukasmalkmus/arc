@@ -15,9 +15,11 @@ var vetCmd = &cobra.Command{
 	Use:   "vet",
 	Short: "Examine ARC source code for suspicious constructs",
 	Long: `Vet examines ARC source code and reports suspicious language
-constructs, such as zero offset operations ([x+0]). It uses
-heuristics that do not guarantee all reports are genuine
-problems.
+constructs. It uses heuristics that do not guarantee all
+reports are genuine problems.
+
+By default all checks are run. To disable this behaviour
+individual checks can be enabled by using the "--enable" flag.
 
 Every argument to this command is expected to be a valid
 ARC source file. Passing no argument will vet every single
@@ -67,5 +69,6 @@ func printVetResult(file string, res []string) {
 func init() {
 	RootCmd.AddCommand(vetCmd)
 
-	vetCmd.Flags().BoolVarP(&vetOpts.Fix, "fix", "f", false, "Apply fixes to source code")
+	// TODO: vetCmd.Flags().BoolVarP(&vetOpts.Fix, "fix", "f", false, "Apply fixes to source code")
+	vetCmd.Flags().StringSliceVar(&vetOpts.Checks, "enable", []string{}, "Enable a specific check")
 }

@@ -1,7 +1,15 @@
 package check
 
+import (
+	"fmt"
+	"sort"
+)
+
 // Check is the interface that must implemented by checks.
 type Check interface {
+	// Desc returns a description of the check.
+	Desc() string
+
 	// Run will execute the given check and return a slice of results. An error
 	// is returned if the check fails.
 	Run() ([]string, error)
@@ -21,7 +29,30 @@ func Register(name string, check Check) {
 	checks[name] = check
 }
 
-// Checks returns a map of the registered checks.
-func Checks() map[string]Check {
-	return checks
+// Get looks up a registered check by its name. It returns an error if no check
+// is registered on that name.
+func Get(name string) (Check, error) {
+	check, ok := checks[name]
+	if !ok {
+		return nil, fmt.Errorf("no check registered named %q", name)
+	}
+	return check, nil
+}
+
+// Desc returns a slice of all registered checks and their description.
+func Desc() (res []string) {
+	for name, check := range checks {
+		res = append(res, fmt.Sprintf("%s - %s", name, check.Desc()))
+	}
+	sort.Strings(res)
+	return res
+}
+
+// List returns a slice of all registered checks by their name.
+func List() (res []string) {
+	for name := range checks {
+		res = append(res, name)
+	}
+	sort.Strings(res)
+	return res
 }

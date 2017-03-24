@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,7 +19,6 @@ type Options struct {
 type Assembler struct {
 	opts   *Options
 	parser *parser.Parser
-	dest   bytes.Buffer
 }
 
 // New returns a new ARC assembler. It takes the source code as io.Reader as

@@ -24,7 +24,7 @@ func New(src io.Reader) *Formater {
 
 // FormatFile will format an ARC source file. The function takes a filename as
 // parameter. It returns an error if formating fails.
-func FormatFile(srcFile string, verbose bool) error {
+func FormatFile(srcFile string) error {
 	// Read source file.
 	src, err := os.Open(srcFile)
 	if err != nil {

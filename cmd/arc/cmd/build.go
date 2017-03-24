@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var verbose bool
+var buildOpts build.Options
 
 // buildCmd represents the build command.
 var buildCmd = &cobra.Command{
@@ -29,7 +29,7 @@ directory.`,
 		// Assemble every file given.
 		if len(args) > 0 {
 			for _, file := range args {
-				if err := build.AssembleFile(file, verbose); err != nil {
+				if err := build.AssembleFile(file, &buildOpts); err != nil {
 					fmt.Println(err)
 				}
 			}
@@ -43,7 +43,7 @@ directory.`,
 			return
 		}
 		for _, file := range files {
-			if err := build.AssembleFile(file, verbose); err != nil {
+			if err := build.AssembleFile(file, &buildOpts); err != nil {
 				fmt.Println(err)
 			}
 		}
@@ -54,5 +54,5 @@ directory.`,
 func init() {
 	RootCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Log more build details")
+	buildCmd.Flags().BoolVarP(&buildOpts.Verbose, "verbose", "v", false, "Log more build details")
 }

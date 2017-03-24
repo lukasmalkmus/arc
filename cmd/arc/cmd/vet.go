@@ -3,15 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/LukasMa/arc/vet"
 	"github.com/spf13/cobra"
 )
 
-// vetOptions are options for the vet command.
-type vetOptions struct {
-	fix bool
-}
-
-var vetOpts vetOptions
+var vetOpts vet.Options
 
 // vetCmd represents the vet command.
 var vetCmd = &cobra.Command{
@@ -35,5 +31,5 @@ file having the .arc file extension in the current directory.`,
 func init() {
 	RootCmd.AddCommand(vetCmd)
 
-	vetCmd.Flags().BoolVarP(&vetOpts.fix, "fix", "f", false, "Apply fixes to source code")
+	vetCmd.Flags().BoolVarP(&vetOpts.Fix, "fix", "f", false, "Apply fixes to source code")
 }

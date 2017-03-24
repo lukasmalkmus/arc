@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,26 +11,38 @@ import (
 	"github.com/LukasMa/arc/parser"
 )
 
+// Options are configuration values for the Assembler.
+type Options struct {
+	Verbose bool
+}
+
 // Assembler assembles ARC source code into machine code.
 type Assembler struct {
-	parser  *parser.Parser
-	verbose bool
+	opts   *Options
+	parser *parser.Parser
+	dest   bytes.Buffer
 }
 
 // New returns a new ARC assembler. It takes the source code as io.Reader as
-// first parameter. Furthermore, more verbose output can be enabled by passing
-// true as second parameter.
-func New(src io.Reader, verbose bool) *Assembler {
-	return &Assembler{
-		parser:  parser.New(src),
-		verbose: verbose,
+// first parameter.
+func New(src io.Reader, options *Options) *Assembler {
+	a := &Assembler{
+		opts:   options,
+		parser: parser.New(src),
 	}
+
+	// Set defaults.
+	if a.opts == nil {
+		a.opts = &Options{}
+	}
+
+	return a
 }
 
 // AssembleFile will transform an ARC source file into machine code. The
 // function takes a filename and an switch for increased verbosity as
 // parameters. It returns an error if assembling fails.
-func AssembleFile(srcFile string, verbose bool) error {
+func AssembleFile(srcFile string, options *Options) error {
 	// Read source file.
 	src, err := os.Open(srcFile)
 	if err != nil {
@@ -38,7 +51,7 @@ func AssembleFile(srcFile string, verbose bool) error {
 	defer src.Close()
 
 	// Assemble source file.
-	code, err := Assemble(src, verbose)
+	code, err := Assemble(src, options)
 	if err != nil {
 		return fmt.Errorf("error assembling file %s: %e", srcFile, err)
 	}
@@ -53,8 +66,8 @@ func AssembleFile(srcFile string, verbose bool) error {
 // an io.Reader as source and an verbosity switch as parameters. The function
 // returns the assembled program as a slice of bytes. An error is returned if
 // assembling fails.
-func Assemble(src io.Reader, verbose bool) ([]byte, error) {
-	return New(src, verbose).Assemble()
+func Assemble(src io.Reader, options *Options) ([]byte, error) {
+	return New(src, options).Assemble()
 }
 
 // Assemble will transform ARC source code into machine code. The function
@@ -66,4 +79,12 @@ func (a *Assembler) Assemble() ([]byte, error) {
 		return nil, err
 	}
 	return []byte(prog.String()), nil
+}
+
+// log is a helper function providing shorter and faster logging. It only logs
+// when the verbose option is enabled.
+func (a *Assembler) log(text string) {
+	if a.opts.Verbose {
+		fmt.Println(text)
+	}
 }

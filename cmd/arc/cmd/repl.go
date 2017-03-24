@@ -9,12 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// replOptions are options for the repl command.
-type replOptions struct {
-	print bool
-}
-
-var replOpts replOptions
+var print bool
 
 // replCmd represents the repl command.
 var replCmd = &cobra.Command{
@@ -40,7 +35,7 @@ check mark. Parser errors will be printed to Stdout.`,
 				c.Printf("\033[31m%s\033[39m\n", err)
 				return nil
 			}
-			if replOpts.print {
+			if print {
 				c.Println(stmt)
 				return nil
 			}
@@ -55,5 +50,5 @@ check mark. Parser errors will be printed to Stdout.`,
 func init() {
 	RootCmd.AddCommand(replCmd)
 
-	replCmd.Flags().BoolVarP(&replOpts.print, "print", "p", false, "Print the evaluated statement")
+	replCmd.Flags().BoolVarP(&print, "print", "p", false, "Print the evaluated statement")
 }

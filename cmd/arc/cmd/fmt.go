@@ -23,7 +23,7 @@ directory.`,
 		// Format every file given.
 		if len(args) > 0 {
 			for _, file := range args {
-				if err := arcfmt.FormatFile(file, verbose); err != nil {
+				if err := arcfmt.FormatFile(file); err != nil {
 					fmt.Println(err)
 				}
 			}
@@ -37,7 +37,7 @@ directory.`,
 			return
 		}
 		for _, file := range files {
-			if err := arcfmt.FormatFile(file, verbose); err != nil {
+			if err := arcfmt.FormatFile(file); err != nil {
 				fmt.Println(err)
 			}
 		}

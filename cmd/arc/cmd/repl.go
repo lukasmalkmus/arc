@@ -45,6 +45,7 @@ check mark. Parser errors will be printed to Stdout.`,
 		}
 		session.Run()
 	},
+	SuggestFor: []string{"sim", "simulate"},
 }
 
 func init() {

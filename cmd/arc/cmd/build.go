@@ -48,7 +48,7 @@ directory.`,
 			}
 		}
 	},
-	SuggestFor: []string{"assemble, compile"},
+	SuggestFor: []string{"assemble", "compile"},
 }
 
 func init() {

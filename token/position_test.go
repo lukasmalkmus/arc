@@ -11,7 +11,7 @@ func TestPosition_String(t *testing.T) {
 	}{
 		{"INVALID POSITION", Pos{}},
 		{"line 1", Pos{Filename: "", Line: 1}},
-		{"token.go: line 1", Pos{Filename: "token.go", Line: 1}},
+		{"token.go:1", Pos{Filename: "token.go", Line: 1}},
 	}
 
 	for _, tt := range tests {

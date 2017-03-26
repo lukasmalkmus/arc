@@ -6,6 +6,7 @@ import "fmt"
 type Pos struct {
 	Filename string
 	Line     int
+	Char     int
 }
 
 // String returns a string representation of the Position.
@@ -16,5 +17,5 @@ func (p Pos) String() string {
 	if p.Filename == "" {
 		return fmt.Sprintf("line %d", p.Line)
 	}
-	return fmt.Sprintf("%s: line %d", p.Filename, p.Line)
+	return fmt.Sprintf("%s:%d", p.Filename, p.Line)
 }

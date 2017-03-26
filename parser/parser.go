@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 
@@ -42,8 +43,36 @@ func New(r io.Reader) *Parser {
 	return p
 }
 
+// NewFileParser returns a new instance of Parser, but will exclusively take an
+// *os.File as argument instead of the more general io.Reader interface.
+// Therefore it will enhance token positions with the filename.
+func NewFileParser(f *os.File) *Parser {
+	// Init Parser with EOF token. This ensures functions must read the first
+	// token themselves.
+	p := &Parser{
+		scanner: scanner.NewFileScanner(f),
+		tok:     token.EOF,
+		lit:     "",
+		pos:     token.Pos{Filename: f.Name(), Line: 0},
+	}
+	return p
+}
+
 // Parse parses a string into a Program AST object.
 func Parse(s string) (*ast.Program, error) { return New(strings.NewReader(s)).Parse() }
+
+// ParseFile parses the content of a file into a Program AST object. An error is
+// returned if opening of the file or parsing fails.
+func ParseFile(filename string) (*ast.Program, error) {
+	// Read source file.
+	src, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error reading source file %q: %e", filename, err)
+	}
+	defer src.Close()
+
+	return NewFileParser(src).Parse()
+}
 
 // ParseStatement parses a string into a Statement AST object.
 func ParseStatement(s string) (ast.Statement, error) {

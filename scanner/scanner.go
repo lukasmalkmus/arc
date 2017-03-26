@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/LukasMa/arc/token"
@@ -25,6 +26,16 @@ func New(r io.Reader) *Scanner {
 	return &Scanner{
 		r:   bufio.NewReader(r),
 		pos: token.Pos{Filename: "", Line: 1},
+	}
+}
+
+// NewFileScanner returns a new instance of Scanner, but will exclusively take
+// an *os.File as argument instead of the more general io.Reader interface.
+// Therefore it will enhance token positions with the filename.
+func NewFileScanner(f *os.File) *Scanner {
+	return &Scanner{
+		r:   bufio.NewReader(f),
+		pos: token.Pos{Filename: f.Name(), Line: 1},
 	}
 }
 

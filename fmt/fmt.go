@@ -28,14 +28,14 @@ func FormatFile(srcFile string) error {
 	// Read source file.
 	src, err := os.Open(srcFile)
 	if err != nil {
-		return fmt.Errorf("error reading file %s: %e", srcFile, err)
+		return fmt.Errorf("error reading file %s:\n%s", srcFile, err.Error())
 	}
 	defer src.Close()
 
 	// Assemble source file.
 	code, err := Format(src)
 	if err != nil {
-		return fmt.Errorf("error formating file %s: %e", srcFile, err)
+		return fmt.Errorf("error formating file %s:\n%s", srcFile, err.Error())
 	}
 
 	// Write formated code to same file.

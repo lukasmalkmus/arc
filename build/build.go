@@ -44,14 +44,14 @@ func AssembleFile(srcFile string, options *Options) error {
 	// Read source file.
 	src, err := os.Open(srcFile)
 	if err != nil {
-		return fmt.Errorf("error reading file %s: %e", srcFile, err)
+		return fmt.Errorf("error reading file %s: %s", srcFile, err.Error())
 	}
 	defer src.Close()
 
 	// Assemble source file.
 	code, err := Assemble(src, options)
 	if err != nil {
-		return fmt.Errorf("error assembling file %s: %e", srcFile, err)
+		return fmt.Errorf("error assembling file %s: %s", srcFile, err.Error())
 	}
 
 	// Evaluate destination file and write program to file.

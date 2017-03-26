@@ -63,14 +63,14 @@ func CheckFile(srcFile string, options *Options) ([]string, error) {
 	// Read source file.
 	src, err := os.Open(srcFile)
 	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %e", srcFile, err)
+		return nil, fmt.Errorf("error reading file %s: %s", srcFile, err.Error())
 	}
 	defer src.Close()
 
 	// Check source file.
 	res, err := Check(src, options)
 	if err != nil {
-		return nil, fmt.Errorf("error formating file %s: %e", srcFile, err)
+		return nil, fmt.Errorf("error formating file %s: %s", srcFile, err.Error())
 	}
 
 	// Return results

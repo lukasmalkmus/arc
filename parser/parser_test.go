@@ -37,7 +37,6 @@ func TestParse(t *testing.T) {
 			prog: `.begin
 		ld %r1, %r2
 		.end`,
-			err: ``,
 		},
 		{
 			prog: `
@@ -57,7 +56,6 @@ func TestParse(t *testing.T) {
 		st %r4, %r5
 
 		`,
-			err: ``,
 		},
 		{
 			prog: `.begin
@@ -65,13 +63,27 @@ func TestParse(t *testing.T) {
 		.end`,
 			err: `line 2: found REGISTER ("r2"), expected ","`,
 		},
+		{
+			prog: `.begin
+		.org 2048
+		ld ld, %r2
+		st %r2, %r3
+		.org 3000
+		x: 25
+		x: y: z
+		ld %r3, %r4
+		.end`,
+			err: `line 3: found "ld", expected "[", REGISTER
+line 7: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`,
+		},
 	}
 
 	for tc, tt := range tests {
-		prog, err := Parse(tt.prog)
-		if prog != nil {
+		_, err := Parse(tt.prog)
+		if tt.err == "" {
 			ok(t, tc, err)
 		} else {
+			fmt.Println(err)
 			equals(t, tc, tt.err, err.Error())
 		}
 	}

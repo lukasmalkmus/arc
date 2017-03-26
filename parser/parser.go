@@ -53,6 +53,7 @@ func ParseStatement(s string) (ast.Statement, error) {
 // Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{}
+	errs := MultiError{}
 
 	// Read the first token. Linebreaks might prepend a statement. Those are
 	// skipped.
@@ -60,10 +61,12 @@ func (p *Parser) Parse() (*ast.Program, error) {
 
 	// Parse input line by line.
 	for p.tok != token.EOF {
-		// Parse statement.
+		// Parse statement. An error will be added to the list of errors.
 		stmt, err := p.parseStatement(true)
 		if err != nil {
-			return nil, err
+			errs.Add(err)
+			p.skipStatement()
+			continue
 		}
 		prog.Statements = append(prog.Statements, stmt)
 
@@ -71,7 +74,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.scanIgnoreNewLine()
 	}
 
-	return prog, nil
+	return prog, errs.Return()
 }
 
 // ParseStatement parses lexical tokens into a Statement AST object.
@@ -430,6 +433,15 @@ func (p *Parser) scanIgnoreNewLine() {
 	}
 }
 
+// skipStatement scans until it encounters a new statement (indicated by
+// newline).
+func (p *Parser) skipStatement() {
+	for p.tok != token.NL && p.tok != token.EOF {
+		p.next()
+	}
+	p.next()
+}
+
 // next scans the next non-whitespace token.
 func (p *Parser) next() {
 	if p.scan(); p.tok == token.WS {
@@ -454,8 +466,9 @@ func (p *Parser) newParseError(expected ...token.Token) *ParseError {
 	return &ParseError{FoundTok: p.tok, FoundLit: p.lit, Pos: p.pos, Expected: expected}
 }
 
-// Error returns the string representation of the error.
-func (e *ParseError) Error() string {
+// Error returns the string representation of the error. It implements the error
+// interface.
+func (e ParseError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("%s: %s", e.Pos, e.Message)
 	}
@@ -479,4 +492,33 @@ func (e *ParseError) Error() string {
 	}
 
 	return fmt.Sprintf("%s: found %s, expected %s", e.Pos, act, strings.Join(exp, ", "))
+}
+
+// MultiError is a collection of multiple errors. It implements the error
+// interface.
+type MultiError struct {
+	errs []error
+}
+
+func (m MultiError) Error() string {
+	errs := []string{}
+	for _, err := range m.errs {
+		errs = append(errs, err.Error())
+	}
+	return strings.Join(errs, "\n")
+}
+
+// Add adds one or more errors.
+func (m *MultiError) Add(es ...error) {
+	for _, e := range es {
+		m.errs = append(m.errs, e)
+	}
+}
+
+// Return returns the MultiError itself if errors are set, otherwise nil.
+func (m *MultiError) Return() error {
+	if len(m.errs) > 0 {
+		return m
+	}
+	return nil
 }

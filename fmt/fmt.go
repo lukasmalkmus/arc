@@ -34,10 +34,10 @@ func Format(src io.Reader) ([]byte, error) {
 	code, err := New(prog).Format()
 	if err != nil {
 		errs.Add(err)
-		return nil, errs
+		return nil, errs.Return()
 	}
 
-	return code, errs
+	return code, errs.Return()
 }
 
 // FormatFile will format an ARC source file. The function takes a filename as
@@ -53,12 +53,12 @@ func FormatFile(filename string) error {
 	code, err := New(prog).Format()
 	if err != nil {
 		errs.Add(err)
-		return errs
+		return errs.Return()
 	}
 
 	// Write formated code back to source file.
 	errs.Add(ioutil.WriteFile(filename, code, 0644))
-	return errs
+	return errs.Return()
 }
 
 // Format will format ARC source code. The function returns the formated program

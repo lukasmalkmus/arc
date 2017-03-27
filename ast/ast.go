@@ -14,7 +14,6 @@ type Statement interface {
 	String() string
 }
 
-func (*InvalidStatement) stmt() {}
 func (*CommentStatement) stmt() {}
 func (*BeginStatement) stmt()   {}
 func (*EndStatement) stmt()     {}
@@ -87,18 +86,6 @@ func (p *Program) AddStatement(stmts ...Statement) {
 			p.statements = append(p.statements, stmt)
 		}
 	}
-}
-
-// InvalidStatement is a placeholder for invalid ARC source code. It gets placed
-// in the Program AST object and helps formatting and vetting code without
-// losing data.
-type InvalidStatement struct {
-	// Literal is the invalid source code.
-	Literal string
-}
-
-func (stmt InvalidStatement) String() string {
-	return stmt.Literal
 }
 
 // CommentStatement represents a comment.

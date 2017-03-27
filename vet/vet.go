@@ -97,14 +97,14 @@ func CheckFile(filename string, options *Options) ([]string, error) {
 	v, err := New(prog, options)
 	if err != nil {
 		errs.Add(err)
-		return nil, errs
+		return nil, errs.Return()
 	}
 
 	// Vet program (run checks).
 	res, err := v.Check()
 	errs.Add(err)
 
-	return res, errs
+	return res, errs.Return()
 }
 
 // Check performs multiple checks on the ARC AST. Results are returned as a
@@ -124,7 +124,7 @@ func (v *Vet) Check() ([]string, error) {
 		res = append(res, r...)
 	}
 
-	return res, errs
+	return res, errs.Return()
 }
 
 // EnabledChecks returns a slice of the enabled checks.

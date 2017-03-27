@@ -8,14 +8,16 @@ import (
 func TestMultiError_Add(t *testing.T) {
 	tests := []struct {
 		errs []error
+		len  int
 	}{
-		{[]error{fmt.Errorf("first error"), fmt.Errorf("second error")}},
+		{[]error{fmt.Errorf("first error"), nil}, 1},
+		{[]error{fmt.Errorf("first error"), fmt.Errorf("second error")}, 2},
 	}
 
 	for _, tt := range tests {
 		me := MultiError{}
 		me.Add(tt.errs...)
-		equals(t, len(tt.errs), len(me.errs))
+		equals(t, tt.len, len(me.errs))
 	}
 }
 

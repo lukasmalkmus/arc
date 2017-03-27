@@ -19,7 +19,9 @@ func (m MultiError) Error() string {
 // Add adds one or more errors.
 func (m *MultiError) Add(es ...error) {
 	for _, e := range es {
-		m.errs = append(m.errs, e)
+		if e != nil {
+			m.errs = append(m.errs, e)
+		}
 	}
 }
 

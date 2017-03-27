@@ -24,8 +24,9 @@ func TestScanner_Scan(t *testing.T) {
 		{"_123", token.ILLEGAL, "_", 1},
 		{".", token.ILLEGAL, ".", 1},
 		{".123", token.ILLEGAL, ".", 1},
-		{"%%", token.ILLEGAL, "", 1},  // No ident after register char
-		{"%2", token.ILLEGAL, "2", 1}, // First ident char is not a letter
+		{"%", token.ILLEGAL, "%", 1},   // No ident after register char
+		{"%%", token.ILLEGAL, "%", 1},  // No ident after register char
+		{"%2", token.ILLEGAL, "%2", 1}, // First ident char is not a letter
 		{"", token.EOF, "", 1},
 		{" ", token.WS, " ", 1},
 		{"   ", token.WS, "   ", 1},
@@ -36,9 +37,9 @@ func TestScanner_Scan(t *testing.T) {
 		{"\n\n", token.NL, "\n\n", 2},     // Double newline (LF + LF)
 		{"\r\n\r\n", token.NL, "\n\n", 2}, // Double newline (CRLF + CRLF)
 		{"\nx", token.NL, "\n", 1},
-		{"!", token.COMMENT, "", 1}, // Empty comment
-		{"! My comment", token.COMMENT, "My comment", 1},
-		{"!    My second comment   ", token.COMMENT, "My second comment", 1},
+		{"!", token.COMMENT, "!", 1}, // Empty comment
+		{"! My comment", token.COMMENT, "! My comment", 1},
+		{"!    My second comment   ", token.COMMENT, "!    My second comment   ", 1},
 
 		// Identifiers
 		{"x", token.IDENT, "x", 1},
@@ -47,10 +48,9 @@ func TestScanner_Scan(t *testing.T) {
 		{"r1", token.IDENT, "r1", 1},
 		{"r10", token.IDENT, "r10", 1},
 		{"r31", token.IDENT, "r31", 1},
-		{"%r1", token.REG, "r1", 1},
-		{"%r10", token.REG, "r10", 1},
-		{"%r31", token.REG, "r31", 1},
-		{"%pc", token.REG, "pc", 1},
+		{"%r1", token.REG, "%r1", 1},
+		{"%r10", token.REG, "%r10", 1},
+		{"%r31", token.REG, "%r31", 1},
 		{"4", token.INT, "4", 1},
 		{"8", token.INT, "8", 1},
 		{"12", token.INT, "12", 1},
@@ -89,6 +89,7 @@ func TestScanner_Scan(t *testing.T) {
 	for tc, tt := range tests {
 		s := New(strings.NewReader(tt.str))
 		tok, lit, pos := s.Scan()
+		fmt.Println(tok, lit)
 		equals(t, tc, tt.tok, tok)
 		equals(t, tc, tt.lit, lit)
 		equals(t, tc, tt.line, pos.Line)

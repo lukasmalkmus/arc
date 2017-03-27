@@ -98,7 +98,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 			p.skipStatement()
 			continue
 		}
-		prog.Statements = append(prog.Statements, stmt)
+		prog.AddStatement(stmt)
 
 		// Next token.
 		p.scanIgnoreNewLine()
@@ -130,7 +130,7 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseOrgStatement()
 	case token.IDENT:
 		if !withLabel {
-			return nil, nil
+			return &ast.LabelStatement{}, nil
 		}
 		return p.parseLabelStatement()
 	case token.LOAD:
@@ -162,22 +162,26 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 	stmt := &ast.BeginStatement{}
 
-	// The directive should end after its literal value.
-	err := p.expectStatementEndOrComment()
+	// Finally we should see the end of the directive.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 // parseEndStatement parses an EndStatement AST object.
 func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 	stmt := &ast.EndStatement{}
 
-	// The directive should end after its literal value.
-	err := p.expectStatementEndOrComment()
+	// Finally we should see the end of the directive.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 // parseOrgStatement parses an OrgStatement AST object.
@@ -192,10 +196,12 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 	stmt.Value = val
 
 	// Finally we should see the end of the directive.
-	err = p.expectStatementEndOrComment()
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {

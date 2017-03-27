@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/LukasMa/arc/token"
 )
@@ -99,7 +98,8 @@ func (s *Scanner) Scan() (token.Token, string, token.Pos) {
 func (s *Scanner) scanComment() (token.Token, string, token.Pos) {
 	// Create a buffer and drop first character.
 	var buf bytes.Buffer
-	_, pos := s.read()
+	ch, pos := s.read()
+	buf.WriteRune(ch)
 
 	// Read every subsequent character into the buffer.
 	// Newline or EOF will cause the loop to exit.
@@ -112,11 +112,8 @@ func (s *Scanner) scanComment() (token.Token, string, token.Pos) {
 		}
 	}
 
-	// Trim comment text for better readability.
-	lit := strings.TrimSpace(buf.String())
-
 	// Return comment with text as literal value.
-	return token.COMMENT, lit, pos
+	return token.COMMENT, buf.String(), pos
 }
 
 // scanDirective consumes the current rune and all contiguous directive runes.
@@ -240,7 +237,8 @@ func (s *Scanner) scanNewline() (token.Token, string, token.Pos) {
 func (s *Scanner) scanRegister() (token.Token, string, token.Pos) {
 	// Create a buffer and drop first character.
 	var buf bytes.Buffer
-	_, pos := s.read()
+	ch, pos := s.read()
+	buf.WriteRune(ch)
 
 	// Read every subsequent ident character into the buffer.
 	// Non-ident characters and EOF will cause the loop to exit.
@@ -256,12 +254,12 @@ func (s *Scanner) scanRegister() (token.Token, string, token.Pos) {
 	}
 
 	// No identifier after % char is not a valid register.
-	if buf.Len() < 1 {
+	if buf.Len() < 2 {
 		return token.ILLEGAL, buf.String(), pos
 	}
 
-	// First identifier char must be a letter.
-	if ch := buf.Bytes()[0]; !isLetter(rune(ch)) {
+	// First identifier char must be a 'r'.
+	if ch := buf.Bytes()[1]; ch != 'r' {
 		return token.ILLEGAL, buf.String(), pos
 	}
 

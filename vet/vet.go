@@ -6,6 +6,7 @@ import (
 
 	"github.com/LukasMa/arc/ast"
 	"github.com/LukasMa/arc/parser"
+	"github.com/LukasMa/arc/util"
 	"github.com/LukasMa/arc/vet/check"
 )
 
@@ -13,7 +14,6 @@ import (
 type Options struct {
 	// Fix enables applying fixes on the source code.
 	Fix bool
-
 	// Checks is a slice of strings representing the checks to run on the source
 	// code.
 	Checks []string
@@ -63,55 +63,68 @@ func New(prog *ast.Program, options *Options) (*Vet, error) {
 // error is returned if the New() function, parsing of the file or a check
 // fails.
 func Check(src io.Reader, options *Options) ([]string, error) {
+	errs := util.MultiError{}
+
 	// Parse source.
 	prog, err := parser.New(src).Parse()
-	if err != nil {
-		return nil, err
-	}
+	errs.Add(err)
 
 	// Create new vet.
 	v, err := New(prog, options)
 	if err != nil {
-		return nil, err
+		errs.Add(err)
+		return nil, errs
 	}
 
-	return v.Check()
+	// Vet program (run checks).
+	res, err := v.Check()
+	errs.Add(err)
+
+	return res, errs
 }
 
-// CheckFile will check an ARC source file. The function takes a filename as
-// parameter. It returns an error if checking fails.
+// CheckFile performs multiple checks on the ARC AST. It takes a filename as
+// parameter. Results are returned as a slice of strings. An error is returned
+// if the New() function, parsing of the file or a check fails.
 func CheckFile(filename string, options *Options) ([]string, error) {
-	// Parse source file.
+	errs := util.MultiError{}
+
+	// Parse source.
 	prog, err := parser.ParseFile(filename)
-	if err != nil {
-		return nil, err
-	}
+	errs.Add(err)
 
 	// Create new vet.
 	v, err := New(prog, options)
 	if err != nil {
-		return nil, err
+		errs.Add(err)
+		return nil, errs
 	}
 
-	return v.Check()
+	// Vet program (run checks).
+	res, err := v.Check()
+	errs.Add(err)
+
+	return res, errs
 }
 
 // Check performs multiple checks on the ARC AST. Results are returned as a
 // slice of strings. An error is returned if parsing of the source file or a
 // check fails.
 func (v *Vet) Check() ([]string, error) {
-	// Run every enabled check.
+	errs := util.MultiError{}
 	res := []string{}
+
+	// Run every enabled check.
 	for name, check := range v.checks {
 		// Run check.
 		r, err := check.Run()
 		if err != nil {
-			return nil, fmt.Errorf("check %s failed: %e", name, err)
+			errs.Add(fmt.Errorf("check %s failed: %e", name, err))
 		}
 		res = append(res, r...)
 	}
 
-	return res, nil
+	return res, errs
 }
 
 // EnabledChecks returns a slice of the enabled checks.

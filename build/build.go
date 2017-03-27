@@ -15,7 +15,6 @@ import (
 type Options struct {
 	// Log is where log messages will be written to.
 	Log io.Writer
-
 	// Verbose enables more verbose output.
 	Verbose bool
 }

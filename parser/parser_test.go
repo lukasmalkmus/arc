@@ -61,7 +61,7 @@ func TestParse(t *testing.T) {
 			prog: `.begin
 		ld %r1 %r2
 		.end`,
-			err: `line 2: found REGISTER ("r2"), expected ","`,
+			err: `line 2: found REGISTER ("%r2"), expected ","`,
 		},
 		{
 			prog: `.begin
@@ -96,7 +96,7 @@ func TestParseCommentStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Text: "This is a comment"}},
+		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Text: "!  This is a comment  "}},
 		{str: "This is not a comment", err: `line 1: found IDENT ("is"), expected ":"`},
 	}
 
@@ -197,8 +197,8 @@ func TestParseLabelStatement(t *testing.T) {
 			str: "mylabel: ld %r1, %r2",
 			stmt: &ast.LabelStatement{Ident: &ast.Identifier{Name: "mylabel"},
 				Reference: &ast.LoadStatement{
-					Source:      &ast.Register{Name: "r1"},
-					Destination: &ast.Register{Name: "r2"},
+					Source:      &ast.Register{Name: "%r1"},
+					Destination: &ast.Register{Name: "%r2"},
 				}},
 		},
 		{str: "x: y: 25", err: `line 1: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
@@ -228,34 +228,34 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld %r1, %r2",
 			stmt: &ast.LoadStatement{
-				Source:      &ast.Register{Name: "r1"},
-				Destination: &ast.Register{Name: "r2"},
+				Source:      &ast.Register{Name: "%r1"},
+				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [x], %r2",
 			stmt: &ast.LoadStatement{
 				Source:      &ast.Expression{Base: &ast.Identifier{Name: "x"}},
-				Destination: &ast.Register{Name: "r2"},
+				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [%r1+8191], %r2",
 			stmt: &ast.LoadStatement{
-				Source:      &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 8191},
-				Destination: &ast.Register{Name: "r2"},
+				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
+				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [%r1+0], %r2",
 			stmt: &ast.LoadStatement{
-				Source:      &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 0},
-				Destination: &ast.Register{Name: "r2"},
+				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
+				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "l %r1, %r2",
-			err: `line 1: found REGISTER ("r1"), expected ":"`,
+			err: `line 1: found REGISTER ("%r1"), expected ":"`,
 		},
 		{
 			str: "ld ld, %r2",
@@ -263,7 +263,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "ld %r1 %r2",
-			err: `line 1: found REGISTER ("r2"), expected ","`,
+			err: `line 1: found REGISTER ("%r2"), expected ","`,
 		},
 		{
 			str: "ld %r1, ld",
@@ -300,34 +300,34 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, %r1",
 			stmt: &ast.StoreStatement{
-				Source:      &ast.Register{Name: "r2"},
-				Destination: &ast.Register{Name: "r1"},
+				Source:      &ast.Register{Name: "%r2"},
+				Destination: &ast.Register{Name: "%r1"},
 			},
 		},
 		{
 			str: "st %r2, [x]",
 			stmt: &ast.StoreStatement{
-				Source:      &ast.Register{Name: "r2"},
+				Source:      &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{Base: &ast.Identifier{Name: "x"}},
 			},
 		},
 		{
 			str: "st %r2, [%r1+8191]",
 			stmt: &ast.StoreStatement{
-				Source:      &ast.Register{Name: "r2"},
-				Destination: &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 8191},
+				Source:      &ast.Register{Name: "%r2"},
+				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
 			},
 		},
 		{
 			str: "st %r2, [%r1+0]",
 			stmt: &ast.StoreStatement{
-				Source:      &ast.Register{Name: "r2"},
-				Destination: &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 0},
+				Source:      &ast.Register{Name: "%r2"},
+				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
 			},
 		},
 		{
 			str: "s %r2, %r1",
-			err: `line 1: found REGISTER ("r2"), expected ":"`,
+			err: `line 1: found REGISTER ("%r2"), expected ":"`,
 		},
 		{
 			str: "st st, %r1",
@@ -335,7 +335,7 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "st %r2 %r1",
-			err: `line 1: found REGISTER ("r1"), expected ","`,
+			err: `line 1: found REGISTER ("%r1"), expected ","`,
 		},
 		{
 			str: "st %r2, st",
@@ -369,8 +369,8 @@ func TestParseExpression(t *testing.T) {
 		obj *ast.Expression
 		err string
 	}{
-		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 8191}},
-		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "r1"}, Operator: "+", Offset: 0}},
+		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191}},
+		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0}},
 		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Name: "x"}, Operator: "", Offset: 0}},
 		{str: "x]", err: `line 1: found IDENT ("x"), expected "["`},
 		{str: "[+8191]", err: `line 1: found "+", expected IDENT, REGISTER`},
@@ -450,7 +450,7 @@ func TestParseMemoryLocation(t *testing.T) {
 		err string
 	}{
 		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Name: "x"}}},
-		{str: "%r1", obj: &ast.Register{Name: "r1"}},
+		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
 		{str: "x", err: `line 1: found IDENT ("x"), expected "[", REGISTER`},
 		{str: "123", err: `line 1: found INTEGER ("123"), expected "[", REGISTER`},
 		{str: "[x+]", err: `line 1: found "]", expected INTEGER`},

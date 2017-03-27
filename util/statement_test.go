@@ -22,6 +22,7 @@ func TestStatementName(t *testing.T) {
 		{stmt: &ast.LabelStatement{}, str: "LABEL"},
 		{stmt: &ast.LoadStatement{}, str: "LOAD"},
 		{stmt: &ast.StoreStatement{}, str: "STORE"},
+		{stmt: nil, str: ""},
 	}
 
 	for _, tt := range tests {

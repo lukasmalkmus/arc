@@ -67,7 +67,7 @@ func ParseFile(filename string) (*ast.Program, error) {
 	// Read source file.
 	src, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("error reading source file %q: %e", filename, err)
+		return nil, fmt.Errorf("error reading source file %q: %s", filename, err.Error())
 	}
 	defer src.Close()
 

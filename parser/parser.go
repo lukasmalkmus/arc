@@ -10,6 +10,7 @@ import (
 	"github.com/LukasMa/arc/ast"
 	"github.com/LukasMa/arc/scanner"
 	"github.com/LukasMa/arc/token"
+	"github.com/LukasMa/arc/util"
 )
 
 // Parser represents a parser.
@@ -82,7 +83,7 @@ func ParseStatement(s string) (ast.Statement, error) {
 // Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{}
-	errs := MultiError{}
+	errs := util.MultiError{}
 
 	// Read the first token. Linebreaks might prepend a statement. Those are
 	// skipped.
@@ -521,33 +522,4 @@ func (e ParseError) Error() string {
 	}
 
 	return fmt.Sprintf("%s: found %s, expected %s", e.Pos, act, strings.Join(exp, ", "))
-}
-
-// MultiError is a collection of multiple errors. It implements the error
-// interface.
-type MultiError struct {
-	errs []error
-}
-
-func (m MultiError) Error() string {
-	errs := []string{}
-	for _, err := range m.errs {
-		errs = append(errs, err.Error())
-	}
-	return strings.Join(errs, "\n")
-}
-
-// Add adds one or more errors.
-func (m *MultiError) Add(es ...error) {
-	for _, e := range es {
-		m.errs = append(m.errs, e)
-	}
-}
-
-// Return returns the MultiError itself if errors are set, otherwise nil.
-func (m *MultiError) Return() error {
-	if len(m.errs) > 0 {
-		return m
-	}
-	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/LukasMa/arc/ast"
@@ -12,6 +13,10 @@ import (
 
 // Options are configuration values for the Assembler.
 type Options struct {
+	// Log is where log messages will be written to.
+	Log io.Writer
+
+	// Verbose enables more verbose output.
 	Verbose bool
 }
 
@@ -33,6 +38,9 @@ func New(prog *ast.Program, options *Options) *Assembler {
 	// Set defaults.
 	if a.opts == nil {
 		a.opts = &Options{}
+	}
+	if a.opts.Log == nil {
+		a.opts.Log = os.Stdout
 	}
 
 	return a
@@ -85,6 +93,6 @@ func (a *Assembler) Assemble() ([]byte, error) {
 // when the verbose option is enabled.
 func (a *Assembler) log(text string) {
 	if a.opts.Verbose {
-		fmt.Println(text)
+		fmt.Fprintln(a.opts.Log, text)
 	}
 }

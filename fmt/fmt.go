@@ -52,9 +52,15 @@ func Format(src io.Reader) ([]byte, error) {
 func FormatFile(filename string) error {
 	errs := util.MultiError{}
 
+	// TODO: If the parser can handle invalid source code, we can continue and
+	// format the invalid program, keeping the invalid code segment intact for
+	// the user to correct.
 	// Parse source file.
 	prog, err := parser.ParseFile(filename)
-	errs.Add(err)
+	//errs.Add(err)
+	if err != nil {
+		return err
+	}
 
 	code, err := New(prog).Format()
 	if err != nil {

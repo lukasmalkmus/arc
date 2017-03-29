@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/LukasMa/arc/util"
+	"github.com/LukasMa/arc/internal"
 	"github.com/LukasMa/arc/vet"
 	"github.com/LukasMa/arc/vet/check"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ file having the .arc file extension in the current directory.`,
 		}
 
 		// Read all files in current directory and vet them.
-		files, err := util.ReadCurDir()
+		files, err := internal.ReadCurDir()
 		if err != nil {
 			fmt.Println(err)
 			return

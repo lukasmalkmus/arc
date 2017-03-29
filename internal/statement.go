@@ -1,4 +1,4 @@
-package util
+package internal
 
 import "github.com/LukasMa/arc/ast"
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/LukasMa/arc/build"
-	"github.com/LukasMa/arc/util"
+	"github.com/LukasMa/arc/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +37,7 @@ directory.`,
 		}
 
 		// Read all files in current directory and assemble them.
-		files, err := util.ReadCurDir()
+		files, err := internal.ReadCurDir()
 		if err != nil {
 			fmt.Println(err)
 			return

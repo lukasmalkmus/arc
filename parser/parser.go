@@ -10,7 +10,7 @@ import (
 	"github.com/LukasMa/arc/ast"
 	"github.com/LukasMa/arc/scanner"
 	"github.com/LukasMa/arc/token"
-	"github.com/LukasMa/arc/util"
+	"github.com/LukasMa/arc/internal"
 )
 
 // Parser represents a parser.
@@ -83,7 +83,7 @@ func ParseStatement(s string) (ast.Statement, error) {
 // Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{}
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 
 	// Read the first token. Linebreaks might prepend a statement. Those are
 	// skipped.

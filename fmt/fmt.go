@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 
 	"github.com/LukasMa/arc/ast"
+	"github.com/LukasMa/arc/internal"
 	"github.com/LukasMa/arc/parser"
-	"github.com/LukasMa/arc/util"
 )
 
 // Formater formats ARC source code.
@@ -25,7 +25,7 @@ func New(prog *ast.Program) *Formater {
 // io.Reader as parameter. It returns the formated program as a slice of bytes.
 // An error is returned if formating fails.
 func Format(src io.Reader) ([]byte, error) {
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 
 	// TODO: If the parser can handle invalid source code, we can continue and
 	// format the invalid program, keeping the invalid code segment intact for
@@ -50,7 +50,7 @@ func Format(src io.Reader) ([]byte, error) {
 // parameter. The formated program will be written back to the source file. The
 // function returns an error if formating fails.
 func FormatFile(filename string) error {
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 
 	// TODO: If the parser can handle invalid source code, we can continue and
 	// format the invalid program, keeping the invalid code segment intact for

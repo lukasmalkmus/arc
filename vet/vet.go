@@ -6,7 +6,7 @@ import (
 
 	"github.com/LukasMa/arc/ast"
 	"github.com/LukasMa/arc/parser"
-	"github.com/LukasMa/arc/util"
+	"github.com/LukasMa/arc/internal"
 	"github.com/LukasMa/arc/vet/check"
 )
 
@@ -63,7 +63,7 @@ func New(prog *ast.Program, options *Options) (*Vet, error) {
 // error is returned if the New() function, parsing of the file or a check
 // fails.
 func Check(src io.Reader, options *Options) ([]string, error) {
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 
 	// Parse source.
 	prog, err := parser.New(src).Parse()
@@ -87,7 +87,7 @@ func Check(src io.Reader, options *Options) ([]string, error) {
 // parameter. Results are returned as a slice of strings. An error is returned
 // if the New() function, parsing of the file or a check fails.
 func CheckFile(filename string, options *Options) ([]string, error) {
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 
 	// Parse source.
 	prog, err := parser.ParseFile(filename)
@@ -111,7 +111,7 @@ func CheckFile(filename string, options *Options) ([]string, error) {
 // slice of strings. An error is returned if parsing of the source file or a
 // check fails.
 func (v *Vet) Check() ([]string, error) {
-	errs := util.MultiError{}
+	errs := internal.MultiError{}
 	res := []string{}
 
 	// Run every enabled check.

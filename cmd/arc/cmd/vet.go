@@ -79,7 +79,6 @@ func printVetResult(file string, res []string) {
 func init() {
 	RootCmd.AddCommand(vetCmd)
 
-	// TODO: vetCmd.Flags().BoolVarP(&vetOpts.Fix, "fix", "f", false, "Apply fixes to source code")
 	vetCmd.Flags().BoolVarP(&list, "list", "l", false, "List available checks")
 	vetCmd.Flags().StringSliceVar(&vetOpts.Checks, "enable", []string{}, "Enable a specific check")
 }

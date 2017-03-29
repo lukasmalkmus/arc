@@ -1,3 +1,12 @@
+/*
+Package fmt provides an ARC source code formater. The formater operates on the
+AST of an ARC program and therefore relies on the parser. This means, it formats
+an ARC statement and returns its string representation. So formating doesn't
+mean modification of the actual source code. It is a complete rewriting of the
+program.
+NOTE: At the moment, it is not possible to format an invalid ARC program. The
+parser must not return an error to start formatting.
+*/
 package fmt
 
 import (

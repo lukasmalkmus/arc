@@ -1,3 +1,7 @@
+/*
+Package build provides an ARC assembler. The assembler operates on the AST of an
+ARC program and therefore relies on the parser.
+*/
 package build
 
 import (

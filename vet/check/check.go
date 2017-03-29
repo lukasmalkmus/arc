@@ -1,3 +1,8 @@
+/*
+Package check provides an interface for checks as well as some generic helper
+functions. Checks must satisfy the Check interface and register themselfs
+by calling vet.Register().
+*/
 package check
 
 import (

@@ -1,6 +1,8 @@
-// Package scanner implements a scanner for ARC source code. It takes a
-// bufio.Reader as source which can then be tokenized through repeated calls to
-// the Scan method.
+/*
+Package scanner implements a buffered scanner which provides lexical analysis
+(tokenizing) of ARC source code. A scanner takes a bufio.Reader as source which
+can then be tokenized through repeated calls to the Scan method.
+*/
 package scanner
 
 import (

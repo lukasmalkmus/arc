@@ -1,3 +1,7 @@
+/*
+Package ast implements the abstract syntax tree of the ARC assembly language. It
+provides generic interfaces, ast objects, data types and helper methods.
+*/
 package ast
 
 import (

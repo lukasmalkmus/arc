@@ -1,3 +1,8 @@
+/*
+Package parser implements an ARC assembly parser. The package exports simple
+functions which can be used to parse ARC source code. It relies on the scanner
+package which provides lexical analysis (tokenizing) of ARC source code.
+*/
 package parser
 
 import (
@@ -8,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/LukasMa/arc/ast"
+	"github.com/LukasMa/arc/internal"
 	"github.com/LukasMa/arc/scanner"
 	"github.com/LukasMa/arc/token"
-	"github.com/LukasMa/arc/internal"
 )
 
 // Parser represents a parser.

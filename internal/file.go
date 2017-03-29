@@ -17,6 +17,7 @@ func ReadCurDir() ([]string, error) {
 }
 
 // ReadDir reads a directory and returns a list of ARC files in that directory.
+// An error is returned if ioutil.ReadDir() fails.
 func ReadDir(dirname string) ([]string, error) {
 	list, err := ioutil.ReadDir(dirname)
 	if err != nil {

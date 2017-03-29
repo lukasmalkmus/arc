@@ -1,3 +1,11 @@
+/*
+Package vet examines ARC source code and reports suspicious language constructs.
+It operates on the AST of an ARC program and therefore relies on the parser.
+NOTE: At the moment, it is not possible to format an invalid ARC program. The
+parser must not return an error to start formatting.
+Different checks are implemented in the subdirectory vet/check and must register
+themselves by calling vet.Register().
+*/
 package vet
 
 import (
@@ -5,8 +13,8 @@ import (
 	"io"
 
 	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/parser"
 	"github.com/LukasMa/arc/internal"
+	"github.com/LukasMa/arc/parser"
 	"github.com/LukasMa/arc/vet/check"
 )
 

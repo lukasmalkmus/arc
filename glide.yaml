@@ -1,0 +1,4 @@
+package: github.com/LukasMa/arc
+import:
+- package: github.com/LukasMa/interactive
+- package: github.com/spf13/cobra

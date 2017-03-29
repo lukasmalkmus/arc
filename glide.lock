@@ -1,0 +1,20 @@
+hash: 39c5294978acf6943fc8cb160f9d37878a249ca2d5f718bb26a72a61767ca9fa
+updated: 2017-03-29T02:58:30.72010473+02:00
+imports:
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/LukasMa/interactive
+  version: b158a6dd0eaa0402ca9d1c562cbfa5820667b2bd
+- name: github.com/spf13/cobra
+  version: 7be4beda01ec05d0b93d80b3facd2b6f44080d94
+- name: github.com/spf13/pflag
+  version: d16db1e50e33dff1b6cdf37596cef36742128670
+- name: golang.org/x/crypto
+  version: 459e26527287adbc2adcc5d0d49abff9a5f315a7
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: afadfcc7779c1f4db0f6f6438afcb108d9c9c7cd
+  subpackages:
+  - unix
+testImports: []

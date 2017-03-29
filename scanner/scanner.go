@@ -16,15 +16,16 @@ var eof = rune(0)
 
 // Scanner represents a lexical scanner.
 type Scanner struct {
-	r   *bufio.Reader
-	pos token.Pos
+	r              *bufio.Reader
+	pos            token.Pos
+	resetCharCount bool
 }
 
 // New returns a new instance of Scanner.
 func New(r io.Reader) *Scanner {
 	return &Scanner{
 		r:   bufio.NewReader(r),
-		pos: token.Pos{Filename: "", Line: 1},
+		pos: token.Pos{Filename: "", Line: 1, Char: 0},
 	}
 }
 
@@ -34,7 +35,7 @@ func New(r io.Reader) *Scanner {
 func NewFileScanner(f *os.File) *Scanner {
 	return &Scanner{
 		r:   bufio.NewReader(f),
-		pos: token.Pos{Filename: f.Name(), Line: 1},
+		pos: token.Pos{Filename: f.Name(), Line: 1, Char: 0},
 	}
 }
 
@@ -75,6 +76,7 @@ func (s *Scanner) Scan() (token.Token, string, token.Pos) {
 	// Otherwise read the individual character.
 	switch ch {
 	case eof:
+		pos.Char--
 		return token.EOF, "", pos
 	case '+':
 		return token.PLUS, string(ch), pos
@@ -225,9 +227,11 @@ func (s *Scanner) scanNewline() (token.Token, string, token.Pos) {
 	buf.Write(clean)
 
 	// Increase position. The position of the token is decremented because the
-	// newline is found in the previous line.
+	// newline is found in the previous line. Furthermore, resetCharCount flag
+	// gets set.
 	s.pos.Line += buf.Len()
 	pos.Line += buf.Len() - 1
+	s.resetCharCount = true
 
 	return token.NL, buf.String(), pos
 }
@@ -292,6 +296,13 @@ func (s *Scanner) scanWhitespace() (token.Token, string, token.Pos) {
 // read reads the next rune from the bufferred reader. Returns the rune(0) if an
 // error occurs (or io.EOF is returned).
 func (s *Scanner) read() (rune, token.Pos) {
+	// Reset character count.
+	if s.resetCharCount {
+		s.pos.Char = 0
+		s.resetCharCount = false
+	}
+	s.pos.Char++
+
 	ch, _, err := s.r.ReadRune()
 	if err != nil {
 		return eof, s.pos
@@ -302,6 +313,7 @@ func (s *Scanner) read() (rune, token.Pos) {
 // unread places the previously read rune back on the reader.
 func (s *Scanner) unread() {
 	s.r.UnreadRune()
+	s.pos.Char--
 }
 
 // isWhitespace returns true if the rune is a space or tab.

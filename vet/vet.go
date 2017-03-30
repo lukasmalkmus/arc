@@ -125,7 +125,7 @@ func (v *Vet) Check() ([]string, error) {
 	// Run every enabled check.
 	for name, check := range v.checks {
 		// Run check.
-		r, err := check.Run()
+		r, err := check.Run(v.prog)
 		if err != nil {
 			errs.Add(fmt.Errorf("check %s failed: %e", name, err))
 		}

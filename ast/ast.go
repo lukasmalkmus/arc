@@ -8,13 +8,27 @@ import (
 	"bytes"
 	"strconv"
 	"strings"
+
+	"github.com/LukasMa/arc/token"
 )
+
+// BaseStmt provides basic fields every statement should implement. It is a
+// helper and does not satisfy the Statement interface.
+type BaseStmt struct {
+	Position token.Pos
+}
+
+// Pos returns the position of the statements first token.
+func (stmt BaseStmt) Pos() token.Pos {
+	return stmt.Position
+}
 
 // Statement is an ARC assembly statement.
 type Statement interface {
 	// stmt is unexported to ensure implementations of Statement can only
 	// originate in this package.
 	stmt()
+	Pos() token.Pos
 	String() string
 }
 
@@ -77,23 +91,27 @@ func (s Statements) String() string {
 
 // Program represents a collection of statements.
 type Program struct {
-	statements Statements
+	// Filename is the name of the file containing the programs source code.
+	Filename token.Pos
+	// Statements is the list of statements building the program.
+	Statements Statements
 }
 
 // String returns a string representation of the program.
-func (p Program) String() string { return p.statements.String() }
+func (p Program) String() string { return p.Statements.String() }
 
 // AddStatement adds one or more Statements to the Program.
 func (p *Program) AddStatement(stmts ...Statement) {
 	for _, stmt := range stmts {
 		if stmt != nil {
-			p.statements = append(p.statements, stmt)
+			p.Statements = append(p.Statements, stmt)
 		}
 	}
 }
 
 // CommentStatement represents a comment.
 type CommentStatement struct {
+	BaseStmt
 	// Text is the actual text of the comment.
 	Text string
 }
@@ -103,14 +121,18 @@ func (stmt CommentStatement) String() string {
 }
 
 // BeginStatement marks the beginning of an ARC program.
-type BeginStatement struct{}
+type BeginStatement struct {
+	BaseStmt
+}
 
 func (stmt BeginStatement) String() string {
 	return ".begin"
 }
 
 // EndStatement marks the end of an ARC program.
-type EndStatement struct{}
+type EndStatement struct {
+	BaseStmt
+}
 
 func (stmt EndStatement) String() string {
 	return ".end"
@@ -118,6 +140,7 @@ func (stmt EndStatement) String() string {
 
 // OrgStatement marks a new section of data in memory.
 type OrgStatement struct {
+	BaseStmt
 	// Value is the memory location.
 	Value Integer
 }
@@ -131,6 +154,7 @@ func (stmt OrgStatement) String() string {
 
 // LabelStatement represents a label.
 type LabelStatement struct {
+	BaseStmt
 	// Ident is the labels identifier.
 	Ident *Identifier
 	// Reference is an Identifier, Integer or the Statement the label addresses.
@@ -147,6 +171,7 @@ func (stmt LabelStatement) String() string {
 
 // LoadStatement represents a load command (ld).
 type LoadStatement struct {
+	BaseStmt
 	// Source is the memory location where the value is loaded from.
 	Source MemoryLocation
 	// Destination is the register where the value is loaded to.
@@ -165,6 +190,7 @@ func (stmt LoadStatement) String() string {
 
 // StoreStatement represents a store command (st).
 type StoreStatement struct {
+	BaseStmt
 	// Source is the register where the value is stored from.
 	Source *Register
 	// Destination is the memory location where the value is stored to.
@@ -196,8 +222,10 @@ func (e Expression) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("[")
 	buf.WriteString(e.Base.String())
-	buf.WriteString(e.Operator)
-	buf.WriteString(strconv.FormatInt(int64(e.Offset), 10))
+	if e.Operator != "" {
+		buf.WriteString(e.Operator)
+		buf.WriteString(strconv.FormatInt(int64(e.Offset), 10))
+	}
 	buf.WriteString("]")
 	return buf.String()
 }

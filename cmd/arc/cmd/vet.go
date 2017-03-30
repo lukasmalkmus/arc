@@ -42,7 +42,7 @@ file having the .arc file extension in the current directory.`,
 				if err != nil {
 					fmt.Println(err)
 				}
-				printVetResult(file, res)
+				printVetResult(res)
 			}
 			return
 		}
@@ -58,22 +58,20 @@ file having the .arc file extension in the current directory.`,
 			if err != nil {
 				fmt.Println(err)
 			}
-			printVetResult(file, res)
+			printVetResult(res)
 		}
 	},
 	SuggestFor: []string{"check"},
 }
 
-func printVetResult(file string, res []string) {
+func printVetResult(res []string) {
 	if len(res) == 0 {
 		return
 	}
 
-	fmt.Printf("Vet results for file \"%s\":\n\n", file)
 	for _, msg := range res {
-		fmt.Printf("\t%s\n", msg)
+		fmt.Printf("%s\n", msg)
 	}
-	fmt.Println()
 }
 
 func init() {

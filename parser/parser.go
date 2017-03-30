@@ -44,7 +44,7 @@ func New(r io.Reader) *Parser {
 		scanner: scanner.New(r),
 		tok:     token.EOF,
 		lit:     "",
-		pos:     token.Pos{Filename: "", Line: 0},
+		pos:     token.Pos{Filename: ""},
 	}
 	return p
 }
@@ -59,7 +59,7 @@ func NewFileParser(f *os.File) *Parser {
 		scanner: scanner.NewFileScanner(f),
 		tok:     token.EOF,
 		lit:     "",
-		pos:     token.Pos{Filename: f.Name(), Line: 0},
+		pos:     token.Pos{Filename: f.Name()},
 	}
 	return p
 }
@@ -87,7 +87,7 @@ func ParseStatement(s string) (ast.Statement, error) {
 
 // Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
-	prog := &ast.Program{}
+	prog := &ast.Program{Filename: p.pos}
 	errs := internal.MultiError{}
 
 	// Read the first token. Linebreaks might prepend a statement. Those are
@@ -155,6 +155,7 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 // parseCommentStatement parses an CommentStatement AST object.
 func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 	stmt := &ast.CommentStatement{Text: p.lit}
+	stmt.Position = p.pos
 
 	// The comment should end after its literal value.
 	err := p.expectStatementEnd()
@@ -166,6 +167,7 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 // parseBeginStatement parses an BeginStatement AST object.
 func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 	stmt := &ast.BeginStatement{}
+	stmt.Position = p.pos
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -179,6 +181,7 @@ func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 // parseEndStatement parses an EndStatement AST object.
 func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 	stmt := &ast.EndStatement{}
+	stmt.Position = p.pos
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -192,6 +195,7 @@ func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 // parseOrgStatement parses an OrgStatement AST object.
 func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 	stmt := &ast.OrgStatement{}
+	stmt.Position = p.pos
 
 	// The directive should be followed by an integer.
 	val, err := p.parseInteger()
@@ -211,6 +215,7 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	stmt := &ast.LabelStatement{}
+	stmt.Position = p.pos
 
 	stmt.Ident = &ast.Identifier{Name: p.lit}
 
@@ -251,6 +256,7 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 // parseLoadStatement parses an LoadStatement AST object.
 func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	stmt := &ast.LoadStatement{}
+	stmt.Position = p.pos
 
 	// First we should see the source memory location.
 	src, err := p.parseMemoryLocation()
@@ -281,6 +287,7 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 // parseStoreStatement parses an StoreStatement AST object.
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt := &ast.StoreStatement{}
+	stmt.Position = p.pos
 
 	// First we should see the source register.
 	src, err := p.parseRegister()

@@ -41,8 +41,8 @@ func Register(check Check) {
 // Get looks up a registered check by its name. It returns an error if no check
 // is registered on that name.
 func Get(name string) (Check, error) {
-	check, ok := checks[name]
-	if !ok {
+	check, prs := checks[name]
+	if !prs {
 		return nil, fmt.Errorf("no check registered named %q", name)
 	}
 	return check, nil

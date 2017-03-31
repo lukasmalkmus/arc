@@ -14,7 +14,7 @@ import (
 )
 
 var errExp = errors.New("Expecting error")
-var baseStmt = ast.BaseStmt{Position: token.Pos{Line: 1, Char: 1}}
+var testPos = token.Pos{Line: 1, Char: 1}
 
 // TestParserBuffer tests if the correct token is returned after an unscan().
 func TestParserBuffer(t *testing.T) {
@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 			prog: `.begin
 		ld %r1 %r2
 		.end`,
-			err: `2:10: found REGISTER ("%r2"), expected ","`,
+			err: `2:10: found REGISTER "%r2", expected ","`,
 		},
 		{
 			prog: `.begin
@@ -72,11 +72,26 @@ func TestParse(t *testing.T) {
 		st %r2, %r3
 		.org 3000
 		x: 25
-		x: y: z
+		y: x: z
 		ld %r3, %r4
 		.end`,
 			err: `3:6: found "ld", expected "[", REGISTER
-7:6: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`,
+7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "sub"`,
+		},
+		{
+			prog: `
+			x: 25
+			x: ld %r1, %r2
+			x: st %r2, %r3`,
+			err: `3:4: label "x" already declared: previous declaration at 2:4
+4:4: label "x" already declared: previous declaration at 2:4`,
+		},
+		{
+			prog: `
+			ld [x], %r1
+			st %r1, [y]`,
+			err: `2:8: unresolved IDENTIFIER "x"
+3:13: unresolved IDENTIFIER "y"`,
 		},
 	}
 
@@ -85,6 +100,9 @@ func TestParse(t *testing.T) {
 		if tt.err == "" {
 			ok(t, tc, err)
 		} else {
+			if err == nil {
+				t.Fatalf("Expected error but got nil!\n(test case %d)", tc)
+			}
 			equals(t, tc, tt.err, err.Error())
 		}
 	}
@@ -97,8 +115,8 @@ func TestParseCommentStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{BaseStmt: baseStmt, Text: "!  This is a comment  "}},
-		{str: "This is not a comment", err: `1:6: found IDENT ("is"), expected ":"`},
+		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Position: testPos, Text: "!  This is a comment  "}},
+		{str: "This is not a comment", err: `1:6: found IDENTIFIER "is", expected ":"`},
 	}
 
 	for tc, tt := range tests {
@@ -119,10 +137,10 @@ func TestParseBeginStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".begin", stmt: &ast.BeginStatement{BaseStmt: baseStmt}},
-		{str: ".beg", err: `1:1: found ILLEGAL (".beg"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".begin", stmt: &ast.BeginStatement{Position: testPos}},
+		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "begin", err: `1:6: found EOF, expected ":"`},
-		{str: ".begin 123", err: `1:8: found INTEGER ("123"), expected COMMENT, NEWLINE, EOF`},
+		{str: ".begin 123", err: `1:8: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
 
 	for tc, tt := range tests {
@@ -143,10 +161,10 @@ func TestParseEndStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".end", stmt: &ast.EndStatement{BaseStmt: baseStmt}},
-		{str: ".ed", err: `1:1: found ILLEGAL (".ed"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".end", stmt: &ast.EndStatement{Position: testPos}},
+		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "end", err: `1:4: found EOF, expected ":"`},
-		{str: ".end 123", err: `1:6: found INTEGER ("123"), expected COMMENT, NEWLINE, EOF`},
+		{str: ".end 123", err: `1:6: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
 
 	for tc, tt := range tests {
@@ -167,10 +185,10 @@ func TestParseOrgStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".org 2048", stmt: &ast.OrgStatement{BaseStmt: baseStmt, Value: ast.Integer(2048)}},
-		{str: ".org 2048 128", err: `1:11: found INTEGER ("128"), expected COMMENT, NEWLINE, EOF`},
+		{str: ".org 2048", stmt: &ast.OrgStatement{Position: testPos, Value: ast.Integer(2048)}},
+		{str: ".org 2048 128", err: `1:11: found INTEGER "128", expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `1:5: found EOF, expected INTEGER`},
-		{str: ".og", err: `1:1: found ILLEGAL (".og"), expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
 		{str: "org", err: `1:4: found EOF, expected ":"`},
 	}
 
@@ -195,24 +213,25 @@ func TestParseLabelStatement(t *testing.T) {
 		{
 			str: "x: 25",
 			stmt: &ast.LabelStatement{
-				BaseStmt:  baseStmt,
-				Ident:     &ast.Identifier{Name: "x"},
+				Position:  testPos,
+				Ident:     &ast.Identifier{Position: testPos, Name: "x"},
 				Reference: ast.Integer(25),
 			},
 		},
-		/*{
+		{
 			str: "mylabel: ld %r1, %r2",
 			stmt: &ast.LabelStatement{
-				BaseStmt: baseStmt,
-				Ident:    &ast.Identifier{Name: "mylabel"},
+				Position: testPos,
+				Ident:    &ast.Identifier{Position: testPos, Name: "mylabel"},
 				Reference: &ast.LoadStatement{
+					Position:    token.Pos{Line: 1, Char: 10},
 					Source:      &ast.Register{Name: "%r1"},
 					Destination: &ast.Register{Name: "%r2"},
 				},
 			},
-		},*/
-		{str: "x: y: 25", err: `1:4: found IDENT ("y"), expected INTEGER, "ld", "st", "add", "sub"`},
-		{str: "x: 25;", err: `1:6: found ILLEGAL (";"), expected COMMENT, NEWLINE, EOF`},
+		},
+		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "sub"`},
+		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
 		{str: "X: 90000000000000", err: `1:4: integer 90000000000000 overflows 32 bit integer`},
 	}
@@ -238,7 +257,7 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld %r1, %r2",
 			stmt: &ast.LoadStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -246,15 +265,15 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [x], %r2",
 			stmt: &ast.LoadStatement{
-				BaseStmt:    baseStmt,
-				Source:      &ast.Expression{Base: &ast.Identifier{Name: "x"}},
+				Position:    testPos,
+				Source:      &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 5}, Name: "x"}},
 				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [%r1+8191], %r2",
 			stmt: &ast.LoadStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -262,14 +281,14 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [%r1+0], %r2",
 			stmt: &ast.LoadStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
 				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "l %r1, %r2",
-			err: `1:3: found REGISTER ("%r1"), expected ":"`,
+			err: `1:3: found REGISTER "%r1", expected ":"`,
 		},
 		{
 			str: "ld ld, %r2",
@@ -277,7 +296,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "ld %r1 %r2",
-			err: `1:8: found REGISTER ("%r2"), expected ","`,
+			err: `1:8: found REGISTER "%r2", expected ","`,
 		},
 		{
 			str: "ld %r1, ld",
@@ -289,7 +308,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "\nld %r1, %r2",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -314,7 +333,7 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, %r1",
 			stmt: &ast.StoreStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Register{Name: "%r2"},
 				Destination: &ast.Register{Name: "%r1"},
 			},
@@ -322,15 +341,15 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, [x]",
 			stmt: &ast.StoreStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Register{Name: "%r2"},
-				Destination: &ast.Expression{Base: &ast.Identifier{Name: "x"}},
+				Destination: &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 10}, Name: "x"}},
 			},
 		},
 		{
 			str: "st %r2, [%r1+8191]",
 			stmt: &ast.StoreStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
 			},
@@ -338,14 +357,14 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, [%r1+0]",
 			stmt: &ast.StoreStatement{
-				BaseStmt:    baseStmt,
+				Position:    testPos,
 				Source:      &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
 			},
 		},
 		{
 			str: "s %r2, %r1",
-			err: `1:3: found REGISTER ("%r2"), expected ":"`,
+			err: `1:3: found REGISTER "%r2", expected ":"`,
 		},
 		{
 			str: "st st, %r1",
@@ -353,7 +372,7 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "st %r2 %r1",
-			err: `1:8: found REGISTER ("%r1"), expected ","`,
+			err: `1:8: found REGISTER "%r1", expected ","`,
 		},
 		{
 			str: "st %r2, st",
@@ -365,7 +384,7 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "\nst %r2, %r1",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENT, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
 		},
 	}
 
@@ -389,12 +408,12 @@ func TestParseExpression(t *testing.T) {
 	}{
 		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191}},
 		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0}},
-		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Name: "x"}, Operator: "", Offset: 0}},
-		{str: "x]", err: `1:1: found IDENT ("x"), expected "["`},
-		{str: "[+8191]", err: `1:2: found "+", expected IDENT, REGISTER`},
-		{str: "[0+8191]", err: `1:2: found INTEGER ("0"), expected IDENT, REGISTER`},
-		{str: "[%r1 8191]", err: `1:6: found INTEGER ("8191"), expected "+", "-", "]"`},
-		{str: "[%r1*8191]", err: `1:5: found ILLEGAL ("*"), expected "+", "-", "]"`},
+		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 2}, Name: "x"}, Operator: "", Offset: 0}},
+		{str: "x]", err: `1:1: found IDENTIFIER "x", expected "["`},
+		{str: "[+8191]", err: `1:2: found "+", expected IDENTIFIER, REGISTER`},
+		{str: "[0+8191]", err: `1:2: found INTEGER "0", expected IDENTIFIER, REGISTER`},
+		{str: "[%r1 8191]", err: `1:6: found INTEGER "8191", expected "+", "-", "]"`},
+		{str: "[%r1*8191]", err: `1:5: found ILLEGAL "*", expected "+", "-", "]"`},
 		{str: "[%r1+]", err: `1:6: found "]", expected INTEGER`},
 		{str: "[%r1+45", err: `1:8: found EOF, expected "]"`},
 	}
@@ -417,10 +436,10 @@ func TestParseIdent(t *testing.T) {
 		obj *ast.Identifier
 		err string
 	}{
-		{str: "x", obj: &ast.Identifier{Name: "x"}},
-		{str: "mylabel", obj: &ast.Identifier{Name: "mylabel"}},
-		{str: ":x", err: `1:1: found ":", expected IDENT`},
-		{str: "123", err: `1:1: found INTEGER ("123"), expected IDENT`},
+		{str: "x", obj: &ast.Identifier{Position: testPos, Name: "x"}},
+		{str: "mylabel", obj: &ast.Identifier{Position: testPos, Name: "mylabel"}},
+		{str: ":x", err: `1:1: found ":", expected IDENTIFIER`},
+		{str: "123", err: `1:1: found INTEGER "123", expected IDENTIFIER`},
 	}
 
 	for i, tt := range tests {
@@ -446,7 +465,7 @@ func TestParseInteger(t *testing.T) {
 		{str: "001", obj: ast.Integer(1)},
 		{str: "0", obj: ast.Integer(0)},
 		{str: "90000000000000", err: `1:1: integer 90000000000000 overflows 32 bit integer`},
-		{str: "x", err: `1:1: found IDENT ("x"), expected INTEGER`},
+		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
 	}
 
 	for i, tt := range tests {
@@ -467,10 +486,10 @@ func TestParseMemoryLocation(t *testing.T) {
 		obj ast.MemoryLocation
 		err string
 	}{
-		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Name: "x"}}},
+		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 2}, Name: "x"}}},
 		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
-		{str: "x", err: `1:1: found IDENT ("x"), expected "[", REGISTER`},
-		{str: "123", err: `1:1: found INTEGER ("123"), expected "[", REGISTER`},
+		{str: "x", err: `1:1: found IDENTIFIER "x", expected "[", REGISTER`},
+		{str: "123", err: `1:1: found INTEGER "123", expected "[", REGISTER`},
 		{str: "[x+]", err: `1:4: found "]", expected INTEGER`},
 	}
 
@@ -498,7 +517,7 @@ func TestExpectStatementEnd(t *testing.T) {
 		{str: " "},
 		{str: string(rune(0))},
 		{str: "\t", err: `1:1: found ILLEGAL, expected NEWLINE, EOF`},
-		{str: ";", err: `1:1: found ILLEGAL (";"), expected NEWLINE, EOF`},
+		{str: ";", err: `1:1: found ILLEGAL ";", expected NEWLINE, EOF`},
 	}
 
 	for i, tt := range tests {
@@ -511,7 +530,7 @@ func TestExpectStatementEnd(t *testing.T) {
 	}
 }
 
-// TestParseSIMM13 verifies the correct parsing of integers.
+// TestParseSIMM13 verifies the correct parsing of SIMM13 integers.
 func TestParseSIMM13(t *testing.T) {
 	tests := []struct {
 		str string

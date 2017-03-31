@@ -26,7 +26,7 @@ func TestToken(t *testing.T) {
 		{"COMMENT", COMMENT, true, false, false, false, false},
 
 		// Identifiers and type literals
-		{"IDENT", IDENT, false, true, false, false, false},
+		{"IDENTIFIER", IDENT, false, true, false, false, false},
 		{"REGISTER", REG, false, true, false, false, false},
 		{"INTEGER", INT, false, true, false, false, false},
 

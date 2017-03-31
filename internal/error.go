@@ -25,6 +25,11 @@ func (m *MultiError) Add(es ...error) {
 	}
 }
 
+// Errors returns the underlying slice of errors.
+func (m *MultiError) Errors() []error {
+	return m.errs
+}
+
 // Return returns the MultiError itself if errors are set, otherwise nil.
 func (m *MultiError) Return() error {
 	if len(m.errs) > 0 {

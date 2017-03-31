@@ -62,7 +62,7 @@ var tokens = [...]string{
 	COMMENT: "COMMENT",
 
 	// Identifiers and type literals
-	IDENT: "IDENT",
+	IDENT: "IDENTIFIER",
 	REG:   "REGISTER",
 	INT:   "INTEGER",
 

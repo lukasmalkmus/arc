@@ -73,9 +73,13 @@ func New(prog *ast.Program, options *Options) (*Vet, error) {
 func Check(src io.Reader, options *Options) ([]string, error) {
 	errs := internal.MultiError{}
 
+	// TODO: Vet crashes with invalid program.
 	// Parse source.
 	prog, err := parser.New(src).Parse()
-	errs.Add(err)
+	//errs.Add(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create new vet.
 	v, err := New(prog, options)
@@ -97,9 +101,13 @@ func Check(src io.Reader, options *Options) ([]string, error) {
 func CheckFile(filename string, options *Options) ([]string, error) {
 	errs := internal.MultiError{}
 
+	// TODO: Vet crashes with invalid program.
 	// Parse source.
 	prog, err := parser.ParseFile(filename)
-	errs.Add(err)
+	//errs.Add(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create new vet.
 	v, err := New(prog, options)

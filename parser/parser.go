@@ -34,6 +34,9 @@ type Parser struct {
 		pos token.Pos
 		n   int
 	}
+
+	unresolvedIdents map[string]*ast.Identifier
+	declaredLabels   map[string]*ast.LabelStatement
 }
 
 // New returns a new instance of Parser.
@@ -42,9 +45,13 @@ func New(r io.Reader) *Parser {
 	// token themselves.
 	p := &Parser{
 		scanner: scanner.New(r),
-		tok:     token.EOF,
-		lit:     "",
-		pos:     token.Pos{Filename: ""},
+
+		tok: token.EOF,
+		lit: "",
+		pos: token.Pos{Filename: ""},
+
+		unresolvedIdents: make(map[string]*ast.Identifier),
+		declaredLabels:   make(map[string]*ast.LabelStatement),
 	}
 	return p
 }
@@ -57,9 +64,13 @@ func NewFileParser(f *os.File) *Parser {
 	// token themselves.
 	p := &Parser{
 		scanner: scanner.NewFileScanner(f),
-		tok:     token.EOF,
-		lit:     "",
-		pos:     token.Pos{Filename: f.Name()},
+
+		tok: token.EOF,
+		lit: "",
+		pos: token.Pos{Filename: f.Name()},
+
+		unresolvedIdents: make(map[string]*ast.Identifier),
+		declaredLabels:   make(map[string]*ast.LabelStatement),
 	}
 	return p
 }
@@ -103,10 +114,39 @@ func (p *Parser) Parse() (*ast.Program, error) {
 			p.skipStatement()
 			continue
 		}
+
+		// If the statement is a label statement, it needs to be declared.
+		if labelStmt, valid := stmt.(*ast.LabelStatement); valid {
+			// Is the label already declared? If so, an error is thrown and the
+			// statement gets NOT added to the program.
+			name := labelStmt.Ident.Name
+			decl, prs := p.declaredLabels[name]
+			if prs {
+				msg := fmt.Sprintf("label %q already declared: previous declaration at %s", name, decl.Pos().NoFile())
+				errs.Add(&ParseError{Message: msg, Pos: labelStmt.Pos()})
+				p.scanIgnoreNewLine()
+				continue
+			}
+			// Declare label and remove its identifier from the list of
+			// unresolved identifiers.
+			p.declaredLabels[name] = labelStmt
+			delete(p.unresolvedIdents, name)
+
+		}
+
+		// Add statement to the programs list of statements.
 		prog.AddStatement(stmt)
 
 		// Next token.
 		p.scanIgnoreNewLine()
+	}
+
+	// TODO: unresolved identifier errors are added at the end of the list. They
+	// should show up in the correct order. Maybe we can sort them?
+	// Generate error for unresolved identifiers.
+	for lit, ident := range p.unresolvedIdents {
+		err := &ParseError{Pos: ident.Pos(), Message: fmt.Sprintf("unresolved IDENTIFIER %q", lit)}
+		errs.Add(err)
 	}
 
 	return prog, errs.Return()
@@ -154,20 +194,20 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 
 // parseCommentStatement parses an CommentStatement AST object.
 func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
-	stmt := &ast.CommentStatement{Text: p.lit}
-	stmt.Position = p.pos
+	stmt := &ast.CommentStatement{Position: p.pos, Text: p.lit}
 
 	// The comment should end after its literal value.
-	err := p.expectStatementEnd()
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 // parseBeginStatement parses an BeginStatement AST object.
 func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
-	stmt := &ast.BeginStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.BeginStatement{Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -180,8 +220,7 @@ func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 
 // parseEndStatement parses an EndStatement AST object.
 func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
-	stmt := &ast.EndStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.EndStatement{Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -194,8 +233,7 @@ func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 
 // parseOrgStatement parses an OrgStatement AST object.
 func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
-	stmt := &ast.OrgStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.OrgStatement{Position: p.pos}
 
 	// The directive should be followed by an integer.
 	val, err := p.parseInteger()
@@ -214,10 +252,10 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 }
 
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
-	stmt := &ast.LabelStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.LabelStatement{Position: p.pos}
 
-	stmt.Ident = &ast.Identifier{Name: p.lit}
+	// Create label identifier.
+	stmt.Ident = &ast.Identifier{Position: p.pos, Name: p.lit}
 
 	// Labels end with a colon (assignment).
 	if p.next(); p.tok != token.COLON {
@@ -245,18 +283,22 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 			return nil, p.newParseError(exp...)
 		}
 		stmt.Reference = refStmt
+		// Unscan because parsing the referenced statement already consumed the
+		// statement end.
+		p.unscan()
 	}
 
 	// Finally we should see the end of the statement.
-	err := p.expectStatementEndOrComment()
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
-	return stmt, err
+	return stmt, nil
 }
 
 // parseLoadStatement parses an LoadStatement AST object.
 func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
-	stmt := &ast.LoadStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.LoadStatement{Position: p.pos}
 
 	// First we should see the source memory location.
 	src, err := p.parseMemoryLocation()
@@ -278,16 +320,17 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
-	err = p.expectStatementEndOrComment()
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 // parseStoreStatement parses an StoreStatement AST object.
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
-	stmt := &ast.StoreStatement{}
-	stmt.Position = p.pos
+	stmt := &ast.StoreStatement{Position: p.pos}
 
 	// First we should see the source register.
 	src, err := p.parseRegister()
@@ -309,10 +352,12 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
-	err = p.expectStatementEndOrComment()
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
 
 	// Return the successfully parsed statement.
-	return stmt, err
+	return stmt, nil
 }
 
 // parseExpression parses an expression and creates an Expression AST object.
@@ -372,7 +417,14 @@ func (p *Parser) parseIdent() (*ast.Identifier, error) {
 	if p.next(); p.tok != token.IDENT {
 		return nil, p.newParseError(token.IDENT)
 	}
-	return &ast.Identifier{Name: p.lit}, nil
+
+	// If the identifier has not been declared yet, we add it to the list of
+	// unresolved identifiers.
+	ident := &ast.Identifier{Position: p.pos, Name: p.lit}
+	if _, prs := p.declaredLabels[p.lit]; !prs {
+		p.unresolvedIdents[p.lit] = ident
+	}
+	return ident, nil
 }
 
 // parseRegister parses a register and creates a Register AST object.
@@ -525,7 +577,7 @@ func (e ParseError) Error() string {
 	if tok := e.FoundTok; tok.IsSpecial() && tok != token.ILLEGAL {
 		act = tok.String()
 	} else if tok := e.FoundTok; tok.IsLiteral() || tok == token.ILLEGAL {
-		act = tok.String() + ` ("` + e.FoundLit + `")`
+		act = tok.String() + ` "` + e.FoundLit + `"`
 	} else {
 		act = `"` + tok.String() + `"`
 	}

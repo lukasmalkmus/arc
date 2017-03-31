@@ -12,17 +12,6 @@ import (
 	"github.com/LukasMa/arc/token"
 )
 
-// BaseStmt provides basic fields every statement should implement. It is a
-// helper and does not satisfy the Statement interface.
-type BaseStmt struct {
-	Position token.Pos
-}
-
-// Pos returns the position of the statements first token.
-func (stmt BaseStmt) Pos() token.Pos {
-	return stmt.Position
-}
-
 // Statement is an ARC assembly statement.
 type Statement interface {
 	// stmt is unexported to ensure implementations of Statement can only
@@ -51,7 +40,6 @@ type Reference interface {
 
 func (*LoadStatement) ref()  {}
 func (*StoreStatement) ref() {}
-func (*Identifier) ref()     {}
 func (Integer) ref()         {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
@@ -62,10 +50,9 @@ type MemoryLocation interface {
 }
 
 func (*Expression) memLoc() {}
-func (*Identifier) memLoc() {}
 func (*Register) memLoc()   {}
 
-// ExpressionBase is implemented by types which casn be the base values of
+// ExpressionBase is implemented by types which can be the base values of
 // expressions. These are identifiers and registers.
 type ExpressionBase interface {
 	// epb is unexported to ensure implementations of Reference can only
@@ -80,7 +67,6 @@ func (*Register) epb()   {}
 // Statements is a list of statements.
 type Statements []Statement
 
-// String returns a string representation of the statements.
 func (s Statements) String() string {
 	var str []string
 	for _, stmt := range s {
@@ -97,7 +83,6 @@ type Program struct {
 	Statements Statements
 }
 
-// String returns a string representation of the program.
 func (p Program) String() string { return p.Statements.String() }
 
 // AddStatement adds one or more Statements to the Program.
@@ -111,9 +96,15 @@ func (p *Program) AddStatement(stmts ...Statement) {
 
 // CommentStatement represents a comment.
 type CommentStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
 	// Text is the actual text of the comment.
 	Text string
+}
+
+// Pos returns the statements position.
+func (stmt CommentStatement) Pos() token.Pos {
+	return stmt.Position
 }
 
 func (stmt CommentStatement) String() string {
@@ -122,7 +113,13 @@ func (stmt CommentStatement) String() string {
 
 // BeginStatement marks the beginning of an ARC program.
 type BeginStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
+}
+
+// Pos returns the statements position.
+func (stmt BeginStatement) Pos() token.Pos {
+	return stmt.Position
 }
 
 func (stmt BeginStatement) String() string {
@@ -131,7 +128,13 @@ func (stmt BeginStatement) String() string {
 
 // EndStatement marks the end of an ARC program.
 type EndStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
+}
+
+// Pos returns the statements position.
+func (stmt EndStatement) Pos() token.Pos {
+	return stmt.Position
 }
 
 func (stmt EndStatement) String() string {
@@ -140,9 +143,15 @@ func (stmt EndStatement) String() string {
 
 // OrgStatement marks a new section of data in memory.
 type OrgStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
 	// Value is the memory location.
 	Value Integer
+}
+
+// Pos returns the statements position.
+func (stmt OrgStatement) Pos() token.Pos {
+	return stmt.Position
 }
 
 func (stmt OrgStatement) String() string {
@@ -154,11 +163,17 @@ func (stmt OrgStatement) String() string {
 
 // LabelStatement represents a label.
 type LabelStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
 	// Ident is the labels identifier.
 	Ident *Identifier
 	// Reference is an Identifier, Integer or the Statement the label addresses.
 	Reference Reference
+}
+
+// Pos returns the statements position.
+func (stmt LabelStatement) Pos() token.Pos {
+	return stmt.Position
 }
 
 func (stmt LabelStatement) String() string {
@@ -171,14 +186,19 @@ func (stmt LabelStatement) String() string {
 
 // LoadStatement represents a load command (ld).
 type LoadStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
 	// Source is the memory location where the value is loaded from.
 	Source MemoryLocation
 	// Destination is the register where the value is loaded to.
 	Destination *Register
 }
 
-// String returns a string representation of the statement.
+// Pos returns the statements position.
+func (stmt LoadStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
 func (stmt LoadStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("ld ")
@@ -190,14 +210,19 @@ func (stmt LoadStatement) String() string {
 
 // StoreStatement represents a store command (st).
 type StoreStatement struct {
-	BaseStmt
+	// Position is the position in the source.
+	Position token.Pos
 	// Source is the register where the value is stored from.
 	Source *Register
 	// Destination is the memory location where the value is stored to.
 	Destination MemoryLocation
 }
 
-// String returns a string representation of the statement.
+// Pos returns the statements position.
+func (stmt StoreStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
 func (stmt StoreStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("st ")
@@ -232,11 +257,17 @@ func (e Expression) String() string {
 
 // Identifier is a named identifier.
 type Identifier struct {
+	// Position is the tokens position in the source.
+	Position token.Pos
 	// Name is the name of the identifier.
 	Name string
 }
 
-// String returns a string representation of the identifier.
+// Pos returns the statements position.
+func (i Identifier) Pos() token.Pos {
+	return i.Position
+}
+
 func (i Identifier) String() string {
 	return i.Name
 }

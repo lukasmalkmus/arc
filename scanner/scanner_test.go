@@ -89,7 +89,6 @@ func TestScanner_Scan(t *testing.T) {
 	for tc, tt := range tests {
 		s := New(strings.NewReader(tt.str))
 		tok, lit, pos := s.Scan()
-		fmt.Println(tok, lit)
 		equals(t, tc, tt.tok, tok)
 		equals(t, tc, tt.lit, lit)
 		equals(t, tc, tt.line, pos.Line)

@@ -42,7 +42,9 @@ const (
 	LOAD  // ld
 	STORE // st
 	ADD   // add
+	ADDCC // addcc
 	SUB   // sub
+	SUBCC // subcc
 	keywordEnd
 
 	// Directives
@@ -80,7 +82,9 @@ var tokens = [...]string{
 	LOAD:  "ld",
 	STORE: "st",
 	ADD:   "add",
+	ADDCC: "addcc",
 	SUB:   "sub",
+	SUBCC: "subcc",
 
 	// Directives
 	BEGIN: ".begin",

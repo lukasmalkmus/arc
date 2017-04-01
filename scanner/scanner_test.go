@@ -77,8 +77,12 @@ func TestScanner_Scan(t *testing.T) {
 		{"ST", token.STORE, "ST", 1},
 		{"add", token.ADD, "add", 1},
 		{"ADD", token.ADD, "ADD", 1},
+		{"addcc", token.ADDCC, "addcc", 1},
+		{"ADDCC", token.ADDCC, "ADDCC", 1},
 		{"sub", token.SUB, "sub", 1},
 		{"SUB", token.SUB, "SUB", 1},
+		{"subcc", token.SUBCC, "subcc", 1},
+		{"SUBCC", token.SUBCC, "SUBCC", 1},
 
 		// Directives
 		{".begin", token.BEGIN, ".begin", 1},

@@ -131,7 +131,6 @@ func (p *Parser) Parse() (*ast.Program, error) {
 			// unresolved identifiers.
 			p.declaredLabels[name] = labelStmt
 			delete(p.unresolvedIdents, name)
-
 		}
 
 		// Add statement to the programs list of statements.
@@ -182,6 +181,14 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseLoadStatement()
 	case token.STORE:
 		return p.parseStoreStatement()
+	case token.ADD:
+		return p.parseAddStatement()
+	case token.ADDCC:
+		return p.parseAddCCStatement()
+	case token.SUB:
+		return p.parseSubStatement()
+	case token.SUBCC:
+		return p.parseSubCCStatement()
 	}
 
 	// We expect a comment, an identifier, a directive or a keyword.
@@ -360,6 +367,187 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	return stmt, nil
 }
 
+// parseAddStatement parses an AddStatement AST object.
+func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
+	stmt := &ast.AddStatement{Position: p.pos}
+
+	// First we should see the first operand.
+	first, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.FirstOperand = first
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.SecondOperand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseAddCCStatement parses an AddCCStatement AST object.
+func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
+	// Parse usual add statement.
+	addStmt, err := p.parseAddStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to addcc.
+	stmt := &ast.AddCCStatement{
+		Position:      addStmt.Position,
+		FirstOperand:  addStmt.FirstOperand,
+		SecondOperand: addStmt.SecondOperand,
+		Destination:   addStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseSubStatement parses an SubStatement AST object.
+func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
+	stmt := &ast.SubStatement{Position: p.pos}
+
+	// First we should see the first operand.
+	first, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.FirstOperand = first
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.SecondOperand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseSubCCStatement parses an SubCCStatement AST object.
+func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
+	// Parse usual add statement.
+	subStmt, err := p.parseSubStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to addcc.
+	stmt := &ast.SubCCStatement{
+		Position:      subStmt.Position,
+		FirstOperand:  subStmt.FirstOperand,
+		SecondOperand: subStmt.SecondOperand,
+		Destination:   subStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseIdent parses an identifier and creates an Identifier AST object.
+func (p *Parser) parseIdent() (*ast.Identifier, error) {
+	if p.next(); p.tok != token.IDENT {
+		return nil, p.newParseError(token.IDENT)
+	}
+
+	// If the identifier has not been declared yet, we add it to the list of
+	// unresolved identifiers.
+	ident := &ast.Identifier{Position: p.pos, Name: p.lit}
+	if _, prs := p.declaredLabels[p.lit]; !prs {
+		p.unresolvedIdents[p.lit] = ident
+	}
+	return ident, nil
+}
+
+// parseRegister parses a register and creates a Register AST object.
+func (p *Parser) parseRegister() (*ast.Register, error) {
+	if p.next(); p.tok != token.REG {
+		return nil, p.newParseError(token.REG)
+	}
+	return &ast.Register{Name: p.lit}, nil
+}
+
+// parseInteger parses an integer and returns an Integer AST object.
+func (p *Parser) parseInteger() (ast.Integer, error) {
+	if p.next(); p.tok != token.INT {
+		return 0, p.newParseError(token.INT)
+	}
+	i, err := strconv.ParseInt(p.lit, 10, 32)
+	if err != nil {
+		return 0, &ParseError{
+			Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit),
+			Pos:     p.pos,
+		}
+	}
+	return ast.Integer(i), nil
+}
+
+// parseSIMM13 parses an SIMM13 integer.
+func (p *Parser) parseSIMM13() (ast.Integer, error) {
+	if p.next(); p.tok != token.INT {
+		return 0, p.newParseError(token.INT)
+	}
+	val, err := strconv.ParseUint(p.lit, 0, 13)
+	if err != nil {
+		return 0, &ParseError{
+			Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit),
+			Pos:     p.pos,
+		}
+	}
+	return ast.Integer(val), nil
+}
+
 // parseExpression parses an expression and creates an Expression AST object.
 func (p *Parser) parseExpression() (*ast.Expression, error) {
 	exp := &ast.Expression{}
@@ -412,42 +600,25 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 	return exp, nil
 }
 
-// parseIdent parses an identifier and creates an Identifier AST object.
-func (p *Parser) parseIdent() (*ast.Identifier, error) {
-	if p.next(); p.tok != token.IDENT {
-		return nil, p.newParseError(token.IDENT)
+// parseOperand parses an operand and creates an Operand AST object.
+func (p *Parser) parseOperand() (ast.Operand, error) {
+	var op ast.Operand
+
+	// Checking errors of the parse functions isn't required here, becasue we
+	// have already checked for the correct token.
+	if p.next(); p.tok == token.REG {
+		p.unscan()
+		reg, _ := p.parseRegister()
+		op = reg
+	} else if p.tok == token.INT {
+		p.unscan()
+		i, _ := p.parseInteger()
+		op = i
+	} else {
+		return nil, p.newParseError(token.INT, token.REG)
 	}
 
-	// If the identifier has not been declared yet, we add it to the list of
-	// unresolved identifiers.
-	ident := &ast.Identifier{Position: p.pos, Name: p.lit}
-	if _, prs := p.declaredLabels[p.lit]; !prs {
-		p.unresolvedIdents[p.lit] = ident
-	}
-	return ident, nil
-}
-
-// parseRegister parses a register and creates a Register AST object.
-func (p *Parser) parseRegister() (*ast.Register, error) {
-	if p.next(); p.tok != token.REG {
-		return nil, p.newParseError(token.REG)
-	}
-	return &ast.Register{Name: p.lit}, nil
-}
-
-// parseInteger parses an integer and returns an Integer AST object.
-func (p *Parser) parseInteger() (ast.Integer, error) {
-	if p.next(); p.tok != token.INT {
-		return 0, p.newParseError(token.INT)
-	}
-	i, err := strconv.ParseInt(p.lit, 10, 32)
-	if err != nil {
-		return 0, &ParseError{
-			Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit),
-			Pos:     p.pos,
-		}
-	}
-	return ast.Integer(i), nil
+	return op, nil
 }
 
 // parseMemoryLocation parses a memory location and creates an Expression or
@@ -471,21 +642,6 @@ func (p *Parser) parseMemoryLocation() (ast.MemoryLocation, error) {
 	}
 
 	return memLoc, nil
-}
-
-// parseSIMM13 parses an SIMM13 integer.
-func (p *Parser) parseSIMM13() (ast.Integer, error) {
-	if p.next(); p.tok != token.INT {
-		return 0, p.newParseError(token.INT)
-	}
-	val, err := strconv.ParseUint(p.lit, 0, 13)
-	if err != nil {
-		return 0, &ParseError{
-			Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit),
-			Pos:     p.pos,
-		}
-	}
-	return ast.Integer(val), nil
 }
 
 // expectStatementEnd expectes the end of a statement. It will error if the next

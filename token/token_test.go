@@ -44,7 +44,9 @@ func TestToken(t *testing.T) {
 		{"ld", LOAD, false, false, false, true, false},
 		{"st", STORE, false, false, false, true, false},
 		{"add", ADD, false, false, false, true, false},
+		{"addcc", ADDCC, false, false, false, true, false},
 		{"sub", SUB, false, false, false, true, false},
+		{"subcc", SUBCC, false, false, false, true, false},
 
 		// Directives
 		{".begin", BEGIN, false, false, false, false, true},

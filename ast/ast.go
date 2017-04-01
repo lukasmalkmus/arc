@@ -28,6 +28,10 @@ func (*OrgStatement) stmt()     {}
 func (*LabelStatement) stmt()   {}
 func (*LoadStatement) stmt()    {}
 func (*StoreStatement) stmt()   {}
+func (*AddStatement) stmt()     {}
+func (*AddCCStatement) stmt()   {}
+func (*SubStatement) stmt()     {}
+func (*SubCCStatement) stmt()   {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -40,6 +44,10 @@ type Reference interface {
 
 func (*LoadStatement) ref()  {}
 func (*StoreStatement) ref() {}
+func (*AddStatement) ref()   {}
+func (*AddCCStatement) ref() {}
+func (*SubStatement) ref()   {}
+func (*SubCCStatement) ref() {}
 func (Integer) ref()         {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
@@ -63,6 +71,18 @@ type ExpressionBase interface {
 
 func (*Identifier) epb() {}
 func (*Register) epb()   {}
+
+// Operand is implemented by types which can be used as operands in arithmetic
+// operations.
+type Operand interface {
+	// op is unexported to ensure implementations of Reference can only
+	// originate in this package.
+	op()
+	String() string
+}
+
+func (Integer) op()   {}
+func (*Register) op() {}
 
 // Statements is a list of statements.
 type Statements []Statement
@@ -227,6 +247,122 @@ func (stmt StoreStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("st ")
 	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// AddStatement represents an add command (add).
+type AddStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// First operand is the first one of the two operands.
+	FirstOperand Operand
+	// Second operand is the second one of the two operands.
+	SecondOperand Operand
+	// Destination is the target register receiving the result of the arithmetic
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt AddStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt AddStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("add ")
+	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// AddCCStatement represents an add (conditional codes set) command (add).
+type AddCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// First operand is the first one of the two operands.
+	FirstOperand Operand
+	// Second operand is the second one of the two operands.
+	SecondOperand Operand
+	// Destination is the target register receiving the result of the arithmetic
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt AddCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt AddCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("addcc ")
+	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// SubStatement represents an sub command (sub).
+type SubStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// First operand is the first one of the two operands.
+	FirstOperand Operand
+	// Second operand is the second one of the two operands.
+	SecondOperand Operand
+	// Destination is the target register receiving the result of the arithmetic
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt SubStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt SubStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("sub ")
+	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// SubCCStatement represents an sub (conditional codes set) command (sub).
+type SubCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// First operand is the first one of the two operands.
+	FirstOperand Operand
+	// Second operand is the second one of the two operands.
+	SecondOperand Operand
+	// Destination is the target register receiving the result of the arithmetic
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt SubCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt SubCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("subcc ")
+	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.SecondOperand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()

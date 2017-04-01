@@ -76,7 +76,7 @@ func TestParse(t *testing.T) {
 		ld %r3, %r4
 		.end`,
 			err: `3:6: found "ld", expected "[", REGISTER
-7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "sub"`,
+7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc"`,
 		},
 		{
 			prog: `
@@ -88,10 +88,12 @@ func TestParse(t *testing.T) {
 		},
 		{
 			prog: `
+			.begin
 			ld [x], %r1
-			st %r1, [y]`,
-			err: `2:8: unresolved IDENTIFIER "x"
-3:13: unresolved IDENTIFIER "y"`,
+			st %r1, [y]
+			.end`,
+			err: `3:8: unresolved IDENTIFIER "x"
+4:13: unresolved IDENTIFIER "y"`,
 		},
 	}
 
@@ -138,7 +140,7 @@ func TestParseBeginStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".begin", stmt: &ast.BeginStatement{Position: testPos}},
-		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc"`},
 		{str: "begin", err: `1:6: found EOF, expected ":"`},
 		{str: ".begin 123", err: `1:8: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -162,7 +164,7 @@ func TestParseEndStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".end", stmt: &ast.EndStatement{Position: testPos}},
-		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc"`},
 		{str: "end", err: `1:4: found EOF, expected ":"`},
 		{str: ".end 123", err: `1:6: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -188,7 +190,7 @@ func TestParseOrgStatement(t *testing.T) {
 		{str: ".org 2048", stmt: &ast.OrgStatement{Position: testPos, Value: ast.Integer(2048)}},
 		{str: ".org 2048 128", err: `1:11: found INTEGER "128", expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `1:5: found EOF, expected INTEGER`},
-		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`},
+		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc"`},
 		{str: "org", err: `1:4: found EOF, expected ":"`},
 	}
 
@@ -230,7 +232,7 @@ func TestParseLabelStatement(t *testing.T) {
 				},
 			},
 		},
-		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "sub"`},
+		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc"`},
 		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
 		{str: "X: 90000000000000", err: `1:4: integer 90000000000000 overflows 32 bit integer`},
@@ -247,7 +249,7 @@ func TestParseLabelStatement(t *testing.T) {
 	}
 }
 
-// TestParseLoadStatement validates the correct parsing of ld commands.
+// TestParseLoadStatement validates the correct parsing of load commands.
 func TestParseLoadStatement(t *testing.T) {
 	tests := []struct {
 		str  string
@@ -308,7 +310,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "\nld %r1, %r2",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc"`,
 		},
 	}
 
@@ -323,7 +325,7 @@ func TestParseLoadStatement(t *testing.T) {
 	}
 }
 
-// TestParseStoreStatement validates the correct parsing of st commands.
+// TestParseStoreStatement validates the correct parsing of store commands.
 func TestParseStoreStatement(t *testing.T) {
 	tests := []struct {
 		str  string
@@ -384,17 +386,436 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "\nst %r2, %r1",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "sub"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc"`,
 		},
 	}
 
 	for tc, tt := range tests {
 		stmt, err := ParseStatement(tt.str)
-		if loadStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
+		if storeStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
 			ok(t, tc, err)
-			equals(t, tc, loadStmt, stmt)
+			equals(t, tc, storeStmt, stmt)
 		} else {
 			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseAddStatement validates the correct parsing of add commands.
+func TestParseAddStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "add %r1, %r2, %r3",
+			stmt: &ast.AddStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "add %r1, 32, %r3",
+			stmt: &ast.AddStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "add 32, %r2, %r3",
+			stmt: &ast.AddStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(32),
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "add 16, 32, %r3",
+			stmt: &ast.AddStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(16),
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "add %r1 %r2, %r3",
+			err: `1:9: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "add %r1, %r2",
+			err: `1:13: found EOF, expected ","`,
+		},
+		{
+			str: "add %r1, %r2, 32",
+			err: `1:15: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "add %r1, x, %r3",
+			err: `1:10: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "add x, %r2, %r3",
+			err: `1:5: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "add %r1, %r2, %r3, %r4",
+			err: `1:18: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if addStmt, valid := tt.stmt.(*ast.AddStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, addStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseAddCCStatement validates the correct parsing of addcc commands.
+func TestParseAddCCStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "addcc %r1, %r2, %r3",
+			stmt: &ast.AddCCStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "addcc %r1, 32, %r3",
+			stmt: &ast.AddCCStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "addcc 32, %r2, %r3",
+			stmt: &ast.AddCCStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(32),
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "addcc 16, 32, %r3",
+			stmt: &ast.AddCCStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(16),
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "addcc %r1 %r2, %r3",
+			err: `1:11: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "addcc %r1, %r2",
+			err: `1:15: found EOF, expected ","`,
+		},
+		{
+			str: "addcc %r1, %r2, 32",
+			err: `1:17: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "addcc %r1, x, %r3",
+			err: `1:12: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "addcc x, %r2, %r3",
+			err: `1:7: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "addcc %r1, %r2, %r3, %r4",
+			err: `1:20: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if addStmt, valid := tt.stmt.(*ast.AddCCStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, addStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseSubStatement validates the correct parsing of sub commands.
+func TestParseSubStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "sub %r1, %r2, %r3",
+			stmt: &ast.SubStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sub %r1, 32, %r3",
+			stmt: &ast.SubStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sub 32, %r2, %r3",
+			stmt: &ast.SubStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(32),
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sub 16, 32, %r3",
+			stmt: &ast.SubStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(16),
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sub %r1 %r2, %r3",
+			err: `1:9: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "sub %r1, %r2",
+			err: `1:13: found EOF, expected ","`,
+		},
+		{
+			str: "sub %r1, %r2, 32",
+			err: `1:15: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "sub %r1, x, %r3",
+			err: `1:10: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "sub x, %r2, %r3",
+			err: `1:5: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "sub %r1, %r2, %r3, %r4",
+			err: `1:18: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if addStmt, valid := tt.stmt.(*ast.SubStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, addStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseSubCCStatement validates the correct parsing of subcc commands.
+func TestParseSubCCStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "subcc %r1, %r2, %r3",
+			stmt: &ast.SubCCStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "subcc %r1, 32, %r3",
+			stmt: &ast.SubCCStatement{
+				Position:      testPos,
+				FirstOperand:  &ast.Register{Name: "%r1"},
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "subcc 32, %r2, %r3",
+			stmt: &ast.SubCCStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(32),
+				SecondOperand: &ast.Register{Name: "%r2"},
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "subcc 16, 32, %r3",
+			stmt: &ast.SubCCStatement{
+				Position:      testPos,
+				FirstOperand:  ast.Integer(16),
+				SecondOperand: ast.Integer(32),
+				Destination:   &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "subcc %r1 %r2, %r3",
+			err: `1:11: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "subcc %r1, %r2",
+			err: `1:15: found EOF, expected ","`,
+		},
+		{
+			str: "subcc %r1, %r2, 32",
+			err: `1:17: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "subcc %r1, x, %r3",
+			err: `1:12: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "subcc x, %r2, %r3",
+			err: `1:7: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "subcc %r1, %r2, %r3, %r4",
+			err: `1:20: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if addStmt, valid := tt.stmt.(*ast.SubCCStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, addStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseIdent verifies the correct parsing of identifiers.
+func TestParseIdent(t *testing.T) {
+	tests := []struct {
+		str string
+		obj *ast.Identifier
+		err string
+	}{
+		{str: "x", obj: &ast.Identifier{Position: testPos, Name: "x"}},
+		{str: "mylabel", obj: &ast.Identifier{Position: testPos, Name: "mylabel"}},
+		{str: ":x", err: `1:1: found ":", expected IDENTIFIER`},
+		{str: "123", err: `1:1: found INTEGER "123", expected IDENTIFIER`},
+	}
+
+	for i, tt := range tests {
+		ident, err := New(strings.NewReader(tt.str)).parseIdent()
+		if err == nil {
+			ok(t, i, err)
+			equals(t, i, tt.obj, ident)
+		} else {
+			equals(t, i, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseRegister verifies the correct parsing of registers.
+func TestParseRegister(t *testing.T) {
+	tests := []struct {
+		str string
+		obj *ast.Register
+		err string
+	}{
+		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
+		{str: "r1", err: `1:1: found IDENTIFIER "r1", expected REGISTER`},
+	}
+
+	for i, tt := range tests {
+		ident, err := New(strings.NewReader(tt.str)).parseRegister()
+		if err == nil {
+			ok(t, i, err)
+			equals(t, i, tt.obj, ident)
+		} else {
+			equals(t, i, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseInteger verifies the correct parsing of integers.
+func TestParseInteger(t *testing.T) {
+	tests := []struct {
+		str string
+		obj ast.Integer
+		err string
+	}{
+		{str: "0", obj: ast.Integer(0)},
+		{str: "100", obj: ast.Integer(100)},
+		{str: "001", obj: ast.Integer(1)},
+		{str: "0", obj: ast.Integer(0)},
+		{str: "90000000000000", err: `1:1: integer 90000000000000 overflows 32 bit integer`},
+		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
+	}
+
+	for i, tt := range tests {
+		integer, err := New(strings.NewReader(tt.str)).parseInteger()
+		if err == nil {
+			ok(t, i, err)
+			equals(t, i, tt.obj, integer)
+		} else {
+			equals(t, i, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseSIMM13 verifies the correct parsing of SIMM13 integers.
+func TestParseSIMM13(t *testing.T) {
+	tests := []struct {
+		str string
+		obj ast.Integer
+		err string
+	}{
+		{str: "0", obj: ast.Integer(0)},
+		{str: "100", obj: ast.Integer(100)},
+		{str: "001", obj: ast.Integer(1)},
+		{str: "0", obj: ast.Integer(0)},
+		{str: "8191", obj: ast.Integer(8191)},
+		{str: "8192", err: `1:1: integer 8192 is not a valid SIMM13`},
+		{str: "-1", err: `1:1: found "-", expected INTEGER`},
+	}
+
+	for i, tt := range tests {
+		integer, err := New(strings.NewReader(tt.str)).parseSIMM13()
+		if err == nil {
+			ok(t, i, err)
+			equals(t, i, tt.obj, integer)
+		} else {
+			equals(t, i, tt.err, err.Error())
 		}
 	}
 }
@@ -429,50 +850,23 @@ func TestParseExpression(t *testing.T) {
 	}
 }
 
-// TestParseIdent verifies the correct parsing of identifiers.
-func TestParseIdent(t *testing.T) {
+// TestParseMemoryLocation verifies the correct parsing of operands.
+func TestParseOperand(t *testing.T) {
 	tests := []struct {
 		str string
-		obj *ast.Identifier
+		obj ast.Operand
 		err string
 	}{
-		{str: "x", obj: &ast.Identifier{Position: testPos, Name: "x"}},
-		{str: "mylabel", obj: &ast.Identifier{Position: testPos, Name: "mylabel"}},
-		{str: ":x", err: `1:1: found ":", expected IDENTIFIER`},
-		{str: "123", err: `1:1: found INTEGER "123", expected IDENTIFIER`},
+		{str: "64", obj: ast.Integer(64)},
+		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
+		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER, REGISTER`},
 	}
 
 	for i, tt := range tests {
-		ident, err := New(strings.NewReader(tt.str)).parseIdent()
+		loc, err := New(strings.NewReader(tt.str)).parseOperand()
 		if err == nil {
 			ok(t, i, err)
-			equals(t, i, tt.obj, ident)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
-	}
-}
-
-// TestParseInteger verifies the correct parsing of integers.
-func TestParseInteger(t *testing.T) {
-	tests := []struct {
-		str string
-		obj ast.Integer
-		err string
-	}{
-		{str: "0", obj: ast.Integer(0)},
-		{str: "100", obj: ast.Integer(100)},
-		{str: "001", obj: ast.Integer(1)},
-		{str: "0", obj: ast.Integer(0)},
-		{str: "90000000000000", err: `1:1: integer 90000000000000 overflows 32 bit integer`},
-		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
-	}
-
-	for i, tt := range tests {
-		integer, err := New(strings.NewReader(tt.str)).parseInteger()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, integer)
+			equals(t, i, tt.obj, loc)
 		} else {
 			equals(t, i, tt.err, err.Error())
 		}
@@ -524,33 +918,6 @@ func TestExpectStatementEnd(t *testing.T) {
 		err := New(strings.NewReader(tt.str)).expectStatementEnd()
 		if err == nil {
 			ok(t, i, err)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
-	}
-}
-
-// TestParseSIMM13 verifies the correct parsing of SIMM13 integers.
-func TestParseSIMM13(t *testing.T) {
-	tests := []struct {
-		str string
-		obj ast.Integer
-		err string
-	}{
-		{str: "0", obj: ast.Integer(0)},
-		{str: "100", obj: ast.Integer(100)},
-		{str: "001", obj: ast.Integer(1)},
-		{str: "0", obj: ast.Integer(0)},
-		{str: "8191", obj: ast.Integer(8191)},
-		{str: "8192", err: `1:1: integer 8192 is not a valid SIMM13`},
-		{str: "-1", err: `1:1: found "-", expected INTEGER`},
-	}
-
-	for i, tt := range tests {
-		integer, err := New(strings.NewReader(tt.str)).parseSIMM13()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, integer)
 		} else {
 			equals(t, i, tt.err, err.Error())
 		}

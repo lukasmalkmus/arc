@@ -30,7 +30,7 @@ directory.`,
 		if len(args) > 0 {
 			for _, file := range args {
 				if err := build.AssembleFile(file, &buildOpts); err != nil {
-					fmt.Println(err)
+					fmt.Printf("\033[31m%s\033[39m\n", err)
 				}
 			}
 			return
@@ -44,7 +44,7 @@ directory.`,
 		}
 		for _, file := range files {
 			if err := build.AssembleFile(file, &buildOpts); err != nil {
-				fmt.Println(err)
+				fmt.Printf("\033[31m%s\033[39m\n", err)
 			}
 		}
 	},

@@ -40,7 +40,7 @@ file having the .arc file extension in the current directory.`,
 			for _, file := range args {
 				res, err := vet.CheckFile(file, &vetOpts)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Printf("\033[31m%s\033[39m\n", err)
 				}
 				printVetResult(res)
 			}
@@ -56,7 +56,7 @@ file having the .arc file extension in the current directory.`,
 		for _, file := range files {
 			res, err := vet.CheckFile(file, &vetOpts)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("\033[31m%s\033[39m\n", err)
 			}
 			printVetResult(res)
 		}

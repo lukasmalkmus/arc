@@ -1,6 +1,10 @@
 package check
 
-import "github.com/LukasMa/arc/ast"
+import (
+	"fmt"
+
+	"github.com/LukasMa/arc/ast"
+)
 
 // Ineffoffset checks if there are any useless "zero offsets" ([%r1 + 0]).
 type Ineffoffset struct {
@@ -23,5 +27,49 @@ func (c Ineffoffset) Name() string {
 
 // Run executes the Check. It implements the Check interface.
 func (c *Ineffoffset) Run(prog *ast.Program) ([]string, error) {
-	return nil, nil
+	var (
+		res  []string
+		exps []*ast.Expression
+	)
+
+	for _, stmt := range prog.Statements {
+		exs := extractExpression(stmt)
+		exps = append(exps, exs...)
+	}
+
+	// See if expressions with a zero offset are defined.
+	for _, exp := range exps {
+		if exp.Operator != "" && exp.Offset == 0 {
+			improvedExp := &ast.Expression{Base: exp.Base}
+			msg := buildMsg(c, exp.Pos(), fmt.Sprintf("offset expression %q can be shortened to %q", exp, improvedExp))
+			res = append(res, msg)
+		}
+	}
+
+	return res, nil
+}
+
+func extractExpression(stmt ast.Statement) []*ast.Expression {
+	exps := []*ast.Expression{}
+
+	switch stmt.(type) {
+	case *ast.LabelStatement:
+		// We also need to examine the referenced statement.
+		label := stmt.(*ast.LabelStatement)
+		ref, valid := label.Reference.(ast.Statement)
+		if valid {
+			exp := extractExpression(ref)
+			exps = append(exps, exp...)
+		}
+	case *ast.LoadStatement:
+		if exp, valid := stmt.(*ast.LoadStatement).Source.(*ast.Expression); valid {
+			exps = append(exps, exp)
+		}
+	case *ast.StoreStatement:
+		if exp, valid := stmt.(*ast.StoreStatement).Destination.(*ast.Expression); valid {
+			exps = append(exps, exp)
+		}
+	}
+
+	return exps
 }

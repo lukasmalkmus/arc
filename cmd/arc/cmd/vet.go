@@ -23,6 +23,11 @@ reports are genuine problems.
 By default all checks are run. To disable this behaviour
 individual checks can be enabled by using the "--enable" flag.
 
+The "--sort" ("-s") flag can be used to sort the results
+according to the source code position they apply to. By
+default, results are ordered after the execution order of
+the different checks.
+
 Every argument to this command is expected to be a valid
 ARC source file. Passing no argument will vet every single
 file having the .arc file extension in the current directory.`,
@@ -82,5 +87,6 @@ func init() {
 	RootCmd.AddCommand(vetCmd)
 
 	vetCmd.Flags().BoolVarP(&list, "list", "l", false, "List available checks")
+	vetCmd.Flags().BoolVarP(&vetOpts.Sort, "sort", "s", false, "Sort results according to the source code position they apply to")
 	vetCmd.Flags().StringSliceVar(&vetOpts.Checks, "enable", []string{}, "Enable a specific check")
 }

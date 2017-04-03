@@ -818,7 +818,7 @@ func (p *Parser) parseSIMM13() (ast.Integer, error) {
 
 // parseExpression parses an expression and creates an Expression AST object.
 func (p *Parser) parseExpression() (*ast.Expression, error) {
-	exp := &ast.Expression{}
+	exp := &ast.Expression{Position: p.pos}
 
 	// A left square bracket indicates the beginning of an expression.
 	if p.next(); p.tok != token.LBRACKET {

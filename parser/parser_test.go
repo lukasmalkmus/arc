@@ -267,24 +267,40 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [x], %r2",
 			stmt: &ast.LoadStatement{
-				Position:    testPos,
-				Source:      &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 5}, Name: "x"}},
+				Position: testPos,
+				Source: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 4},
+					Base: &ast.Identifier{
+						Position: token.Pos{Line: 1, Char: 5},
+						Name:     "x",
+					},
+				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [%r1+8191], %r2",
 			stmt: &ast.LoadStatement{
-				Position:    testPos,
-				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
+				Position: testPos,
+				Source: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 4},
+					Base:     &ast.Register{Name: "%r1"},
+					Operator: "+",
+					Offset:   8191,
+				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
 		{
 			str: "ld [%r1+0], %r2",
 			stmt: &ast.LoadStatement{
-				Position:    testPos,
-				Source:      &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
+				Position: testPos,
+				Source: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 4},
+					Base:     &ast.Register{Name: "%r1"},
+					Operator: "+",
+					Offset:   0,
+				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
 		},
@@ -343,25 +359,41 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, [x]",
 			stmt: &ast.StoreStatement{
-				Position:    testPos,
-				Source:      &ast.Register{Name: "%r2"},
-				Destination: &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 10}, Name: "x"}},
+				Position: testPos,
+				Source:   &ast.Register{Name: "%r2"},
+				Destination: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 9},
+					Base: &ast.Identifier{
+						Position: token.Pos{Line: 1, Char: 10},
+						Name:     "x",
+					},
+				},
 			},
 		},
 		{
 			str: "st %r2, [%r1+8191]",
 			stmt: &ast.StoreStatement{
-				Position:    testPos,
-				Source:      &ast.Register{Name: "%r2"},
-				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191},
+				Position: testPos,
+				Source:   &ast.Register{Name: "%r2"},
+				Destination: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 9},
+					Base:     &ast.Register{Name: "%r1"},
+					Operator: "+",
+					Offset:   8191,
+				},
 			},
 		},
 		{
 			str: "st %r2, [%r1+0]",
 			stmt: &ast.StoreStatement{
-				Position:    testPos,
-				Source:      &ast.Register{Name: "%r2"},
-				Destination: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0},
+				Position: testPos,
+				Source:   &ast.Register{Name: "%r2"},
+				Destination: &ast.Expression{
+					Position: token.Pos{Line: 1, Char: 9},
+					Base:     &ast.Register{Name: "%r1"},
+					Operator: "+",
+					Offset:   0,
+				},
 			},
 		},
 		{
@@ -1448,7 +1480,15 @@ func TestParseMemoryLocation(t *testing.T) {
 		obj ast.MemoryLocation
 		err string
 	}{
-		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Position: token.Pos{Line: 1, Char: 2}, Name: "x"}}},
+		{
+			str: "[x]", obj: &ast.Expression{
+				Position: testPos,
+				Base: &ast.Identifier{
+					Position: token.Pos{Line: 1, Char: 2},
+					Name:     "x",
+				},
+			},
+		},
 		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected "[", REGISTER`},
 		{str: "123", err: `1:1: found INTEGER "123", expected "[", REGISTER`},

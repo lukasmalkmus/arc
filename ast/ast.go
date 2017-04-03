@@ -619,12 +619,18 @@ func (stmt XorCCStatement) String() string {
 // Expression is an expression which bundles an identifier with an offset. In
 // ARC an expression is delimited by an opening and a closing square bracket.
 type Expression struct {
+	Position token.Pos
 	// Base is the register or identifer used as base in the expression.
 	Base ExpressionBase
 	// Operator is the operator which is used in the expression.
 	Operator string
 	// Offset is the second operand.
 	Offset Integer
+}
+
+// Pos returns the statements position.
+func (e Expression) Pos() token.Pos {
+	return e.Position
 }
 
 func (e Expression) String() string {

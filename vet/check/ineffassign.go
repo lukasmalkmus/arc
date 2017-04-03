@@ -34,22 +34,9 @@ func (c *Ineffassign) Run(prog *ast.Program) ([]string, error) {
 	)
 
 	for _, stmt := range prog.Statements {
-		switch stmt.(type) {
-		case *ast.LabelStatement:
-			labels = append(labels, stmt.(*ast.LabelStatement))
-		case *ast.LoadStatement:
-			if ident, valid := stmt.(*ast.LoadStatement).Source.(*ast.Expression).Base.(*ast.Identifier); valid {
-				if !has(ident, idents) {
-					idents = append(idents, ident)
-				}
-			}
-		case *ast.StoreStatement:
-			if ident, valid := stmt.(*ast.StoreStatement).Destination.(*ast.Expression).Base.(*ast.Identifier); valid {
-				if !has(ident, idents) {
-					idents = append(idents, ident)
-				}
-			}
-		}
+		ids, lbs := extractIdentLabel(stmt)
+		idents = append(idents, ids...)
+		labels = append(labels, lbs...)
 	}
 
 	// See if labels are declared but their identifiers never used.
@@ -70,7 +57,44 @@ func (c *Ineffassign) Run(prog *ast.Program) ([]string, error) {
 	return res, nil
 }
 
-func has(ident *ast.Identifier, idents []*ast.Identifier) bool {
+func extractIdentLabel(stmt ast.Statement) ([]*ast.Identifier, []*ast.LabelStatement) {
+	idents := []*ast.Identifier{}
+	labels := []*ast.LabelStatement{}
+
+	switch stmt.(type) {
+	case *ast.LabelStatement:
+		label := stmt.(*ast.LabelStatement)
+		labels = append(labels, label)
+		// Besides reading the label, we also need to examine the referenced
+		// statement.
+		ref, valid := label.Reference.(ast.Statement)
+		if valid {
+			ids, lbs := extractIdentLabel(ref)
+			labels = append(labels, lbs...)
+			for _, ident := range ids {
+				if !has(idents, ident) {
+					idents = append(idents, ident)
+				}
+			}
+		}
+	case *ast.LoadStatement:
+		if ident, valid := stmt.(*ast.LoadStatement).Source.(*ast.Expression).Base.(*ast.Identifier); valid {
+			if !has(idents, ident) {
+				idents = append(idents, ident)
+			}
+		}
+	case *ast.StoreStatement:
+		if ident, valid := stmt.(*ast.StoreStatement).Destination.(*ast.Expression).Base.(*ast.Identifier); valid {
+			if !has(idents, ident) {
+				idents = append(idents, ident)
+			}
+		}
+	}
+
+	return idents, labels
+}
+
+func has(idents []*ast.Identifier, ident *ast.Identifier) bool {
 	for _, val := range idents {
 		if ident == val {
 			return true

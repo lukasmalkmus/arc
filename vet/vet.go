@@ -11,6 +11,7 @@ package vet
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/LukasMa/arc/ast"
 	"github.com/LukasMa/arc/internal"
@@ -20,11 +21,11 @@ import (
 
 // Options are configuration values for the Vet.
 type Options struct {
-	// Fix enables applying fixes on the source code.
-	Fix bool
 	// Checks is a slice of strings representing the checks to run on the source
 	// code.
 	Checks []string
+	// Sort enables sorting vet results.
+	Sort bool
 }
 
 // Vet examines ARC source code and reports suspicious language constructs. It
@@ -138,6 +139,11 @@ func (v *Vet) Check() ([]string, error) {
 			errs.Add(fmt.Errorf("check %s failed: %e", name, err))
 		}
 		res = append(res, r...)
+	}
+
+	// Sort results if enabled.
+	if v.opts.Sort {
+		sort.Strings(res)
 	}
 
 	return res, errs.Return()

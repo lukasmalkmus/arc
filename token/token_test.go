@@ -47,6 +47,14 @@ func TestToken(t *testing.T) {
 		{"addcc", ADDCC, false, false, false, true, false},
 		{"sub", SUB, false, false, false, true, false},
 		{"subcc", SUBCC, false, false, false, true, false},
+		{"and", AND, false, false, false, true, false},
+		{"andcc", ANDCC, false, false, false, true, false},
+		{"or", OR, false, false, false, true, false},
+		{"orcc", ORCC, false, false, false, true, false},
+		{"orn", ORN, false, false, false, true, false},
+		{"orncc", ORNCC, false, false, false, true, false},
+		{"xor", XOR, false, false, false, true, false},
+		{"xorcc", XORCC, false, false, false, true, false},
 
 		// Directives
 		{".begin", BEGIN, false, false, false, false, true},

@@ -84,7 +84,7 @@ func ParseFile(filename string) (*ast.Program, error) {
 	// Read source file.
 	src, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("error reading source file %q: %s", filename, err.Error())
+		return nil, err
 	}
 	defer src.Close()
 
@@ -115,24 +115,6 @@ func (p *Parser) Parse() (*ast.Program, error) {
 			continue
 		}
 
-		// If the statement is a label statement, it needs to be declared.
-		if labelStmt, valid := stmt.(*ast.LabelStatement); valid {
-			// Is the label already declared? If so, an error is thrown and the
-			// statement gets NOT added to the program.
-			name := labelStmt.Ident.Name
-			decl, prs := p.declaredLabels[name]
-			if prs {
-				msg := fmt.Sprintf("label %q already declared: previous declaration at %s", name, decl.Pos().NoFile())
-				errs.Add(&ParseError{Message: msg, Pos: labelStmt.Pos()})
-				p.scanIgnoreNewLine()
-				continue
-			}
-			// Declare label and remove its identifier from the list of
-			// unresolved identifiers.
-			p.declaredLabels[name] = labelStmt
-			delete(p.unresolvedIdents, name)
-		}
-
 		// Add statement to the programs list of statements.
 		prog.AddStatement(stmt)
 
@@ -140,13 +122,14 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.scanIgnoreNewLine()
 	}
 
-	// TODO: unresolved identifier errors are added at the end of the list. They
-	// should show up in the correct order. Maybe we can sort them?
 	// Generate error for unresolved identifiers.
 	for lit, ident := range p.unresolvedIdents {
 		err := &ParseError{Pos: ident.Pos(), Message: fmt.Sprintf("unresolved IDENTIFIER %q", lit)}
 		errs.Add(err)
 	}
+
+	// Sort errors.
+	errs.Sort()
 
 	return prog, errs.Return()
 }
@@ -189,6 +172,22 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseSubStatement()
 	case token.SUBCC:
 		return p.parseSubCCStatement()
+	case token.AND:
+		return p.parseAndStatement()
+	case token.ANDCC:
+		return p.parseAndCCStatement()
+	case token.OR:
+		return p.parseOrStatement()
+	case token.ORCC:
+		return p.parseOrCCStatement()
+	case token.ORN:
+		return p.parseOrnStatement()
+	case token.ORNCC:
+		return p.parseOrnCCStatement()
+	case token.XOR:
+		return p.parseXorStatement()
+	case token.XORCC:
+		return p.parseXorCCStatement()
 	}
 
 	// We expect a comment, an identifier, a directive or a keyword.
@@ -264,6 +263,14 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	// Create label identifier.
 	stmt.Ident = &ast.Identifier{Position: p.pos, Name: p.lit}
 
+	// Is the label already declared? If so, an error is thrown.
+	decl, prs := p.declaredLabels[stmt.Ident.Name]
+	if prs {
+		msg := fmt.Sprintf("label %q already declared: previous declaration at %s", stmt.Ident, decl.Pos().NoFile())
+		err := &ParseError{Message: msg, Pos: stmt.Pos()}
+		return nil, err
+	}
+
 	// Labels end with a colon (assignment).
 	if p.next(); p.tok != token.COLON {
 		return nil, p.newParseError(token.COLON)
@@ -299,6 +306,11 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	if err := p.expectStatementEndOrComment(); err != nil {
 		return nil, err
 	}
+
+	// Declare label and remove its identifier from the list of
+	// unresolved identifiers.
+	p.declaredLabels[stmt.Ident.Name] = stmt
+	delete(p.unresolvedIdents, stmt.Ident.Name)
 
 	return stmt, nil
 }
@@ -371,12 +383,12 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
 	stmt := &ast.AddStatement{Position: p.pos}
 
-	// First we should see the first operand.
-	first, err := p.parseOperand()
+	// First we should see the source register.
+	reg, err := p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.FirstOperand = first
+	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -388,7 +400,7 @@ func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt.SecondOperand = second
+	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -421,10 +433,10 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 
 	// Transform to addcc.
 	stmt := &ast.AddCCStatement{
-		Position:      addStmt.Position,
-		FirstOperand:  addStmt.FirstOperand,
-		SecondOperand: addStmt.SecondOperand,
-		Destination:   addStmt.Destination,
+		Position:    addStmt.Position,
+		Source:      addStmt.Source,
+		Operand:     addStmt.Operand,
+		Destination: addStmt.Destination,
 	}
 
 	// Return the successfully parsed statement.
@@ -435,12 +447,12 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 	stmt := &ast.SubStatement{Position: p.pos}
 
-	// First we should see the first operand.
-	first, err := p.parseOperand()
+	// First we should see the source register.
+	reg, err := p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.FirstOperand = first
+	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -452,7 +464,7 @@ func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt.SecondOperand = second
+	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -477,18 +489,274 @@ func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 
 // parseSubCCStatement parses an SubCCStatement AST object.
 func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
-	// Parse usual add statement.
+	// Parse usual sub statement.
 	subStmt, err := p.parseSubStatement()
 	if err != nil {
 		return nil, err
 	}
 
-	// Transform to addcc.
+	// Transform to subcc.
 	stmt := &ast.SubCCStatement{
-		Position:      subStmt.Position,
-		FirstOperand:  subStmt.FirstOperand,
-		SecondOperand: subStmt.SecondOperand,
-		Destination:   subStmt.Destination,
+		Position:    subStmt.Position,
+		Source:      subStmt.Source,
+		Operand:     subStmt.Operand,
+		Destination: subStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseAndStatement parses an AndStatement AST object.
+func (p *Parser) parseAndStatement() (*ast.AndStatement, error) {
+	stmt := &ast.AndStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseAndCCStatement parses an AndCCStatement AST object.
+func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
+	// Parse usual and statement.
+	andStmt, err := p.parseAndStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to andcc.
+	stmt := &ast.AndCCStatement{
+		Position:    andStmt.Position,
+		Source:      andStmt.Source,
+		Operand:     andStmt.Operand,
+		Destination: andStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseOrStatement parses an OrStatement AST object.
+func (p *Parser) parseOrStatement() (*ast.OrStatement, error) {
+	stmt := &ast.OrStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseOrCCStatement parses an OrCCStatement AST object.
+func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
+	// Parse usual or statement.
+	orStmt, err := p.parseOrStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to orcc.
+	stmt := &ast.OrCCStatement{
+		Position:    orStmt.Position,
+		Source:      orStmt.Source,
+		Operand:     orStmt.Operand,
+		Destination: orStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseOrnStatement parses an OrnStatement AST object.
+func (p *Parser) parseOrnStatement() (*ast.OrnStatement, error) {
+	stmt := &ast.OrnStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseOrnCCStatement parses an OrnCCStatement AST object.
+func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
+	// Parse usual orn statement.
+	ornStmt, err := p.parseOrnStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to orncc.
+	stmt := &ast.OrnCCStatement{
+		Position:    ornStmt.Position,
+		Source:      ornStmt.Source,
+		Operand:     ornStmt.Operand,
+		Destination: ornStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseXorStatement parses an XorStatement AST object.
+func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
+	stmt := &ast.XorStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseXorCCStatement parses an XorCCStatement AST object.
+func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
+	// Parse usual xor statement.
+	xorStmt, err := p.parseXorStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform xto orcc.
+	stmt := &ast.XorCCStatement{
+		Position:    xorStmt.Position,
+		Source:      xorStmt.Source,
+		Operand:     xorStmt.Operand,
+		Destination: xorStmt.Destination,
 	}
 
 	// Return the successfully parsed statement.
@@ -526,7 +794,7 @@ func (p *Parser) parseInteger() (ast.Integer, error) {
 	i, err := strconv.ParseInt(p.lit, 10, 32)
 	if err != nil {
 		return 0, &ParseError{
-			Message: fmt.Sprintf("integer %s overflows 32 bit integer", p.lit),
+			Message: fmt.Sprintf("INTEGER %q overflows 32 bit integer width", p.lit),
 			Pos:     p.pos,
 		}
 	}
@@ -541,7 +809,7 @@ func (p *Parser) parseSIMM13() (ast.Integer, error) {
 	val, err := strconv.ParseUint(p.lit, 0, 13)
 	if err != nil {
 		return 0, &ParseError{
-			Message: fmt.Sprintf("integer %s is not a valid SIMM13", p.lit),
+			Message: fmt.Sprintf("INTEGER %q is not a valid SIMM13", p.lit),
 			Pos:     p.pos,
 		}
 	}
@@ -558,7 +826,7 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 	}
 
 	// Opening bracket is followed by identifer or register. Checking errors of
-	// the parse functions isn't required here, becasue we have already checked
+	// the parse functions isn't required here, because we have already checked
 	// for the correct token.
 	if p.next(); p.tok == token.IDENT {
 		p.unscan()
@@ -604,15 +872,20 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 func (p *Parser) parseOperand() (ast.Operand, error) {
 	var op ast.Operand
 
-	// Checking errors of the parse functions isn't required here, becasue we
-	// have already checked for the correct token.
+	// Checking errors of the parseRegister function isn't required here,
+	// because we have already checked for the correct token. But the
+	// parseInteger function needs checking because the literal can still be
+	// overflowing the integer width.
 	if p.next(); p.tok == token.REG {
 		p.unscan()
 		reg, _ := p.parseRegister()
 		op = reg
 	} else if p.tok == token.INT {
 		p.unscan()
-		i, _ := p.parseInteger()
+		i, err := p.parseInteger()
+		if err != nil {
+			return nil, err
+		}
 		op = i
 	} else {
 		return nil, p.newParseError(token.INT, token.REG)

@@ -45,6 +45,14 @@ const (
 	ADDCC // addcc
 	SUB   // sub
 	SUBCC // subcc
+	AND   // and
+	ANDCC // andcc
+	OR    // or
+	ORCC  // orcc
+	ORN   // orn
+	ORNCC // orncc
+	XOR   // xor
+	XORCC // xorcc
 	keywordEnd
 
 	// Directives
@@ -85,6 +93,14 @@ var tokens = [...]string{
 	ADDCC: "addcc",
 	SUB:   "sub",
 	SUBCC: "subcc",
+	AND:   "and",
+	ANDCC: "andcc",
+	OR:    "or",
+	ORCC:  "orcc",
+	ORN:   "orn",
+	ORNCC: "orncc",
+	XOR:   "xor",
+	XORCC: "xorcc",
 
 	// Directives
 	BEGIN: ".begin",

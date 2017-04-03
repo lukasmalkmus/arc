@@ -32,6 +32,14 @@ func (*AddStatement) stmt()     {}
 func (*AddCCStatement) stmt()   {}
 func (*SubStatement) stmt()     {}
 func (*SubCCStatement) stmt()   {}
+func (*AndStatement) stmt()     {}
+func (*AndCCStatement) stmt()   {}
+func (*OrStatement) stmt()      {}
+func (*OrCCStatement) stmt()    {}
+func (*OrnStatement) stmt()     {}
+func (*OrnCCStatement) stmt()   {}
+func (*XorStatement) stmt()     {}
+func (*XorCCStatement) stmt()   {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -42,13 +50,21 @@ type Reference interface {
 	String() string
 }
 
+func (Integer) ref()         {}
 func (*LoadStatement) ref()  {}
 func (*StoreStatement) ref() {}
 func (*AddStatement) ref()   {}
 func (*AddCCStatement) ref() {}
 func (*SubStatement) ref()   {}
 func (*SubCCStatement) ref() {}
-func (Integer) ref()         {}
+func (*AndStatement) ref()   {}
+func (*AndCCStatement) ref() {}
+func (*OrStatement) ref()    {}
+func (*OrCCStatement) ref()  {}
+func (*OrnStatement) ref()   {}
+func (*OrnCCStatement) ref() {}
+func (*XorStatement) ref()   {}
+func (*XorCCStatement) ref() {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
 // memory. An identifier can be addressed as well as expressions and registers.
@@ -256,10 +272,10 @@ func (stmt StoreStatement) String() string {
 type AddStatement struct {
 	// Position is the position in the source.
 	Position token.Pos
-	// First operand is the first one of the two operands.
-	FirstOperand Operand
-	// Second operand is the second one of the two operands.
-	SecondOperand Operand
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
 	// Destination is the target register receiving the result of the arithmetic
 	// operation.
 	Destination *Register
@@ -273,22 +289,22 @@ func (stmt AddStatement) Pos() token.Pos {
 func (stmt AddStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("add ")
-	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(stmt.Source.String())
 	buf.WriteString(", ")
-	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(stmt.Operand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
 
-// AddCCStatement represents an add (conditional codes set) command (add).
+// AddCCStatement represents an add (conditional codes set) command (addcc).
 type AddCCStatement struct {
 	// Position is the position in the source.
 	Position token.Pos
-	// First operand is the first one of the two operands.
-	FirstOperand Operand
-	// Second operand is the second one of the two operands.
-	SecondOperand Operand
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
 	// Destination is the target register receiving the result of the arithmetic
 	// operation.
 	Destination *Register
@@ -302,22 +318,22 @@ func (stmt AddCCStatement) Pos() token.Pos {
 func (stmt AddCCStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("addcc ")
-	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(stmt.Source.String())
 	buf.WriteString(", ")
-	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(stmt.Operand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
 
-// SubStatement represents an sub command (sub).
+// SubStatement represents a sub command (sub).
 type SubStatement struct {
 	// Position is the position in the source.
 	Position token.Pos
-	// First operand is the first one of the two operands.
-	FirstOperand Operand
-	// Second operand is the second one of the two operands.
-	SecondOperand Operand
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
 	// Destination is the target register receiving the result of the arithmetic
 	// operation.
 	Destination *Register
@@ -331,22 +347,22 @@ func (stmt SubStatement) Pos() token.Pos {
 func (stmt SubStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("sub ")
-	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(stmt.Source.String())
 	buf.WriteString(", ")
-	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(stmt.Operand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
 
-// SubCCStatement represents an sub (conditional codes set) command (sub).
+// SubCCStatement represents a sub (conditional codes set) command (subcc).
 type SubCCStatement struct {
 	// Position is the position in the source.
 	Position token.Pos
-	// First operand is the first one of the two operands.
-	FirstOperand Operand
-	// Second operand is the second one of the two operands.
-	SecondOperand Operand
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
 	// Destination is the target register receiving the result of the arithmetic
 	// operation.
 	Destination *Register
@@ -360,9 +376,241 @@ func (stmt SubCCStatement) Pos() token.Pos {
 func (stmt SubCCStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("subcc ")
-	buf.WriteString(stmt.FirstOperand.String())
+	buf.WriteString(stmt.Source.String())
 	buf.WriteString(", ")
-	buf.WriteString(stmt.SecondOperand.String())
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// AndStatement represents an and command (and).
+type AndStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt AndStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt AndStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("and ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// AndCCStatement represents an and (conditional codes set) command (andcc).
+type AndCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt AndCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt AndCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("andcc ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// OrStatement represents an or command (or).
+type OrStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt OrStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt OrStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("or ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// OrCCStatement represents an or (conditional codes set) command (orcc).
+type OrCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt OrCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt OrCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("orcc ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// OrnStatement represents a orn command (orn).
+type OrnStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt OrnStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt OrnStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("orn ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// OrnCCStatement represents a orn (conditional codes set) command (orncc).
+type OrnCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt OrnCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt OrnCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("orncc ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// XorStatement represents a xor command (xor).
+type XorStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt XorStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt XorStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("xor ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// XorCCStatement represents a xor (conditional codes set) command (xorcc).
+type XorCCStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt XorCCStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt XorCCStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("xorcc ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()

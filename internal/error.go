@@ -1,6 +1,10 @@
 package internal
 
-import "strings"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 // MultiError is a collection of multiple errors. It implements the error
 // interface.
@@ -26,14 +30,28 @@ func (m *MultiError) Add(es ...error) {
 }
 
 // Errors returns the underlying slice of errors.
-func (m *MultiError) Errors() []error {
+func (m MultiError) Errors() []error {
 	return m.errs
 }
 
 // Return returns the MultiError itself if errors are set, otherwise nil.
-func (m *MultiError) Return() error {
+func (m MultiError) Return() error {
 	if len(m.errs) > 0 {
 		return m
 	}
 	return nil
+}
+
+// Sort sorts the underlying slice of errors.
+func (m *MultiError) Sort() {
+	strs := []string{}
+	errs := []error{}
+	for _, err := range m.errs {
+		strs = append(strs, err.Error())
+	}
+	sort.Strings(strs)
+	for _, err := range strs {
+		errs = append(errs, fmt.Errorf("%s", err))
+	}
+	m.errs = errs
 }

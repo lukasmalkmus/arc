@@ -24,7 +24,7 @@ directory.`,
 		if len(args) > 0 {
 			for _, file := range args {
 				if err := arcfmt.FormatFile(file); err != nil {
-					fmt.Printf("\033[31m%s\033[39m\n", err)
+					printError(err)
 				}
 			}
 			return
@@ -38,7 +38,7 @@ directory.`,
 		}
 		for _, file := range files {
 			if err := arcfmt.FormatFile(file); err != nil {
-				fmt.Printf("\033[31m%s\033[39m\n", err)
+				printError(err)
 			}
 		}
 	},

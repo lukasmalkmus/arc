@@ -15,7 +15,7 @@ var list bool
 // vetCmd represents the vet command.
 var vetCmd = &cobra.Command{
 	Use:   "vet",
-	Short: "Examine ARC source code for suspicious constructs",
+	Short: "Examine ARC source code for suspicious language constructs",
 	Long: `Vet examines ARC source code and reports suspicious language
 constructs. It uses heuristics that do not guarantee all
 reports are genuine problems.
@@ -40,7 +40,7 @@ file having the .arc file extension in the current directory.`,
 			for _, file := range args {
 				res, err := vet.CheckFile(file, &vetOpts)
 				if err != nil {
-					fmt.Printf("\033[31m%s\033[39m\n", err)
+					printError(err)
 				}
 				printVetResult(res)
 			}
@@ -56,7 +56,7 @@ file having the .arc file extension in the current directory.`,
 		for _, file := range files {
 			res, err := vet.CheckFile(file, &vetOpts)
 			if err != nil {
-				fmt.Printf("\033[31m%s\033[39m\n", err)
+				printError(err)
 			}
 			printVetResult(res)
 		}
@@ -72,6 +72,10 @@ func printVetResult(res []string) {
 	for _, msg := range res {
 		fmt.Printf("%s\n", msg)
 	}
+}
+
+func printError(err error) {
+	fmt.Printf("\033[31m%s\033[39m\n", err)
 }
 
 func init() {

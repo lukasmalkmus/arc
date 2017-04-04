@@ -1,5 +1,5 @@
-# LukasMa/arc (WIP)
-> A complete toolkit for the ARC assembly language. - by **[Lukas Malkmus](https://github.com/LukasMa)**
+# lukasmalkmus/arc (WIP)
+> A complete toolkit for the ARC assembly language. - by **[Lukas Malkmus](https://github.com/lukasmalkmus)**
 
 [![Travis Status][travis_badge]][travis]
 [![Coverage Status][coverage_badge]][coverage]
@@ -39,7 +39,7 @@ the [release page][release].
 ##### Building from source
 This project uses [glide](http://glide.sh) for vendoring.
 ```bash
-git clone https://github.com/LukasMa/arc
+git clone https://github.com/lukasmalkmus/arc
 cd arc
 glide install
 go build cmd/arc/main.go
@@ -63,15 +63,15 @@ Distributed under Apache License (`Apache License, Version 2.0`).
 See [LICENSE](LICENSE) for more information.
 
 
-[travis]: https://travis-ci.org/LukasMa/arc
-[travis_badge]: https://travis-ci.org/LukasMa/arc.svg
-[coverage]: https://coveralls.io/github/LukasMa/arc?branch=master
-[coverage_badge]: https://coveralls.io/repos/github/LukasMa/arc/badge.svg?branch=master
-[report]: https://goreportcard.com/report/github.com/LukasMa/arc
-[report_badge]: https://goreportcard.com/badge/github.com/LukasMa/arc
-[docs]: https://godoc.org/github.com/LukasMa/arc
-[docs_badge]: https://godoc.org/github.com/LukasMa/arc?status.svg
-[release]: https://github.com/LukasMa/arc/releases
-[release_badge]: https://img.shields.io/github/release/LukasMa/arc.svg
+[travis]: https://travis-ci.org/lukasmalkmus/arc
+[travis_badge]: https://travis-ci.org/lukasmalkmus/arc.svg
+[coverage]: https://coveralls.io/github/lukasmalkmus/arc?branch=master
+[coverage_badge]: https://coveralls.io/repos/github/lukasmalkmus/arc/badge.svg?branch=master
+[report]: https://goreportcard.com/report/github.com/lukasmalkmus/arc
+[report_badge]: https://goreportcard.com/badge/github.com/lukasmalkmus/arc
+[docs]: https://godoc.org/github.com/lukasmalkmus/arc
+[docs_badge]: https://godoc.org/github.com/lukasmalkmus/arc?status.svg
+[release]: https://github.com/lukasmalkmus/arc/releases
+[release_badge]: https://img.shields.io/github/release/lukasmalkmus/arc.svg
 [license]: https://opensource.org/licenses/Apache-2.0
 [license_badge]: https://img.shields.io/badge/license-Apache-blue.svg

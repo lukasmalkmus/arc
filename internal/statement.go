@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/LukasMa/arc/ast"
+import "github.com/lukasmalkmus/arc/ast"
 
 // StatementName returns a human-friendly name of the given statement. An empty
 // string is returned if the string can't be resolved.

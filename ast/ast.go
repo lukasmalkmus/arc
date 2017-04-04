@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 // Statement is an ARC assembly statement.

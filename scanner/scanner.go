@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 var eof = rune(0)

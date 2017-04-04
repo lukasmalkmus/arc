@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 // Check is the interface that must implemented by checks.

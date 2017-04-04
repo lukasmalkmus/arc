@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/LukasMa/arc/internal"
-	"github.com/LukasMa/arc/vet"
-	"github.com/LukasMa/arc/vet/check"
+	"github.com/lukasmalkmus/arc/internal"
+	"github.com/lukasmalkmus/arc/vet"
+	"github.com/lukasmalkmus/arc/vet/check"
 	"github.com/spf13/cobra"
 )
 

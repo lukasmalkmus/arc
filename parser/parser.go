@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/internal"
-	"github.com/LukasMa/arc/scanner"
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/internal"
+	"github.com/lukasmalkmus/arc/scanner"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 // Parser represents a parser.

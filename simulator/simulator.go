@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/LukasMa/arc/ast"
+	"github.com/lukasmalkmus/arc/ast"
 )
 
 // Simulator is simulating an ARC microprocessor. It executes one statement at a

@@ -3,7 +3,7 @@ package check
 import (
 	"fmt"
 
-	"github.com/LukasMa/arc/ast"
+	"github.com/lukasmalkmus/arc/ast"
 )
 
 // Ineffoffset checks if there are any useless "zero offsets" ([%r1 + 0]).

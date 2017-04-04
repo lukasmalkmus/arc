@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/LukasMa/arc/build"
-	"github.com/LukasMa/arc/internal"
+	"github.com/lukasmalkmus/arc/build"
+	"github.com/lukasmalkmus/arc/internal"
 	"github.com/spf13/cobra"
 )
 

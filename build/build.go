@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/parser"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/parser"
 )
 
 // Options are configuration values for the Assembler.

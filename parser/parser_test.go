@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 var errExp = errors.New("Expecting error")

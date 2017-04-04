@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/LukasMa/arc/parser"
-	"github.com/LukasMa/interactive"
+	"github.com/lukasmalkmus/arc/parser"
+	"github.com/lukasmalkmus/interactive"
 	"github.com/spf13/cobra"
 )
 

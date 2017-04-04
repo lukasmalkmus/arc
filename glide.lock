@@ -1,10 +1,10 @@
-hash: 39c5294978acf6943fc8cb160f9d37878a249ca2d5f718bb26a72a61767ca9fa
-updated: 2017-03-29T02:58:30.72010473+02:00
+hash: a14141c11952ff6bcbccc894910cad3419ebbb0f0c82e164f1ac476419e87f64
+updated: 2017-04-04T10:51:26.900697184+02:00
 imports:
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
-- name: github.com/LukasMa/interactive
-  version: b158a6dd0eaa0402ca9d1c562cbfa5820667b2bd
+- name: github.com/lukasmalkmus/interactive
+  version: 0801c6b3b2a0aa6fbb70b980030db469df091cfd
 - name: github.com/spf13/cobra
   version: 7be4beda01ec05d0b93d80b3facd2b6f44080d94
 - name: github.com/spf13/pflag

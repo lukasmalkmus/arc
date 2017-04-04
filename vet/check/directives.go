@@ -3,7 +3,7 @@ package check
 import (
 	"fmt"
 
-	"github.com/LukasMa/arc/ast"
+	"github.com/lukasmalkmus/arc/ast"
 )
 
 // Directives checks if there are any statements outside the .begin and .end

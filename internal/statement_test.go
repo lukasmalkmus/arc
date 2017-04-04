@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/LukasMa/arc/ast"
+	"github.com/lukasmalkmus/arc/ast"
 )
 
 func TestStatementName(t *testing.T) {

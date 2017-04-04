@@ -13,10 +13,10 @@ import (
 	"io"
 	"sort"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/internal"
-	"github.com/LukasMa/arc/parser"
-	"github.com/LukasMa/arc/vet/check"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/internal"
+	"github.com/lukasmalkmus/arc/parser"
+	"github.com/lukasmalkmus/arc/vet/check"
 )
 
 // Options are configuration values for the Vet.

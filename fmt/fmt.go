@@ -13,9 +13,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/LukasMa/arc/ast"
-	"github.com/LukasMa/arc/internal"
-	"github.com/LukasMa/arc/parser"
+	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/internal"
+	"github.com/lukasmalkmus/arc/parser"
 )
 
 // Formater formats ARC source code.

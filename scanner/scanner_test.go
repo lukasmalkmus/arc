@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LukasMa/arc/token"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 func TestScanner_Scan(t *testing.T) {

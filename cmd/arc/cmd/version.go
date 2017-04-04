@@ -11,7 +11,7 @@ var (
 	Version = "0.1"
 
 	// Author is the Author of the application.
-	Author = "Lukas Malkmus <mail@lukasmalkmus.com>"
+	Author = "Lukas Malkmus <mail@lukasmalkmuslkmus.com>"
 
 	// License  is the applications license.
 	License = "MIT"

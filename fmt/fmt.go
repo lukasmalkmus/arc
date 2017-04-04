@@ -39,10 +39,13 @@ func Format(src io.Reader) ([]byte, error) {
 	// TODO: If the parser can handle invalid source code, we can continue and
 	// format the invalid program, keeping the invalid code segment intact for
 	// the user to correct.
-	// Parse source.
+	// Parse source. Abort if we don't have a program.
 	prog, err := parser.New(src).Parse()
 	//errs.Add(err)
 	if err != nil {
+		return nil, err
+	}
+	if err == nil {
 		return nil, err
 	}
 

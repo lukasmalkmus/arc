@@ -102,11 +102,10 @@ func Check(src io.Reader, options *Options) ([]string, error) {
 func CheckFile(filename string, options *Options) ([]string, error) {
 	errs := internal.MultiError{}
 
-	// TODO: Vet crashes with invalid program.
-	// Parse source.
+	// Parse source. Abort if we don't have a program.
 	prog, err := parser.ParseFile(filename)
-	//errs.Add(err)
-	if err != nil {
+	errs.Add(err)
+	if prog == nil {
 		return nil, err
 	}
 

@@ -40,6 +40,8 @@ func (*OrnStatement) stmt()     {}
 func (*OrnCCStatement) stmt()   {}
 func (*XorStatement) stmt()     {}
 func (*XorCCStatement) stmt()   {}
+func (*SLLStatement) stmt()     {}
+func (*SRAStatement) stmt()     {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -65,6 +67,8 @@ func (*OrnStatement) ref()   {}
 func (*OrnCCStatement) ref() {}
 func (*XorStatement) ref()   {}
 func (*XorCCStatement) ref() {}
+func (*SLLStatement) ref()   {}
+func (*SRAStatement) ref()   {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
 // memory. An identifier can be addressed as well as expressions and registers.
@@ -608,6 +612,64 @@ func (stmt XorCCStatement) Pos() token.Pos {
 func (stmt XorCCStatement) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("xorcc ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// SLLStatement represents a shift left logical command (sll).
+type SLLStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the logical
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt SLLStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt SLLStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("orn ")
+	buf.WriteString(stmt.Source.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Operand.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// SRAStatement represents a shift right arithmetic command (sra).
+type SRAStatement struct {
+	// Position is the position in the source.
+	Position token.Pos
+	// Source is a register acting as first operand.
+	Source *Register
+	// Operand is the second one of the two operands.
+	Operand Operand
+	// Destination is the target register receiving the result of the arithmetic
+	// operation.
+	Destination *Register
+}
+
+// Pos returns the statements position.
+func (stmt SRAStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+func (stmt SRAStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("orn ")
 	buf.WriteString(stmt.Source.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Operand.String())

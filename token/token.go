@@ -20,7 +20,7 @@ const (
 
 	// Identifiers and type literals
 	literalBeg
-	IDENT // x, y, abc, foo_bar
+	IDENT // x, y, abc, foo_bar, main
 	REG   // %r1, %r2, %pc
 	INT   // 12345
 	literalEnd
@@ -53,6 +53,8 @@ const (
 	ORNCC // orncc
 	XOR   // xor
 	XORCC // xorcc
+	SLL   // sll (shift left logical)
+	SRA   // sra (shift right arithmetic)
 	keywordEnd
 
 	// Directives
@@ -101,6 +103,8 @@ var tokens = [...]string{
 	ORNCC: "orncc",
 	XOR:   "xor",
 	XORCC: "xorcc",
+	SLL:   "sll",
+	SRA:   "sra",
 
 	// Directives
 	BEGIN: ".begin",

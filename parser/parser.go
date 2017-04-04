@@ -188,6 +188,10 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseXorStatement()
 	case token.XORCC:
 		return p.parseXorCCStatement()
+	case token.SLL:
+		return p.parseSLLStatement()
+	case token.SRA:
+		return p.parseSRAStatement()
 	}
 
 	// We expect a comment, an identifier, a directive or a keyword.
@@ -757,6 +761,94 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 		Source:      xorStmt.Source,
 		Operand:     xorStmt.Operand,
 		Destination: xorStmt.Destination,
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseSLLStatement parses an SLLStatement AST object.
+func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
+	stmt := &ast.SLLStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseSRAStatement parses an SRAStatement AST object.
+func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
+	stmt := &ast.SRAStatement{Position: p.pos}
+
+	// First we should see the source register.
+	reg, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Source = reg
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Then we should see the second operand.
+	second, err := p.parseOperand()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Operand = second
+
+	// Next we should see a comma as seperator between destination and source.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// The last valueable information is the destination register.
+	dest, err := p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Destination = dest
+
+	// Finally we should see the end of the statement.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
 	}
 
 	// Return the successfully parsed statement.

@@ -76,7 +76,7 @@ func TestParse(t *testing.T) {
 		ld %r3, %r4
 		.end`,
 			err: `3:6: found "ld", expected "[", REGISTER
-7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 		{
 			prog: `
@@ -140,7 +140,7 @@ func TestParseBeginStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".begin", stmt: &ast.BeginStatement{Position: testPos}},
-		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`},
+		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "begin", err: `1:6: found EOF, expected ":"`},
 		{str: ".begin 123", err: `1:8: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -164,7 +164,7 @@ func TestParseEndStatement(t *testing.T) {
 		err  string
 	}{
 		{str: ".end", stmt: &ast.EndStatement{Position: testPos}},
-		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`},
+		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "end", err: `1:4: found EOF, expected ":"`},
 		{str: ".end 123", err: `1:6: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -190,7 +190,7 @@ func TestParseOrgStatement(t *testing.T) {
 		{str: ".org 2048", stmt: &ast.OrgStatement{Position: testPos, Value: ast.Integer(2048)}},
 		{str: ".org 2048 128", err: `1:11: found INTEGER "128", expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `1:5: found EOF, expected INTEGER`},
-		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`},
+		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "org", err: `1:4: found EOF, expected ":"`},
 	}
 
@@ -232,7 +232,7 @@ func TestParseLabelStatement(t *testing.T) {
 				},
 			},
 		},
-		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`},
+		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
 		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" overflows 32 bit integer width`},
@@ -326,7 +326,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "\nld %r1, %r2",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -418,7 +418,7 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "\nst %r2, %r1",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -492,7 +492,7 @@ func TestParseAddStatement(t *testing.T) {
 		},
 		{
 			str: "\nadd %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -566,7 +566,7 @@ func TestParseAddCCStatement(t *testing.T) {
 		},
 		{
 			str: "\naddcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -640,7 +640,7 @@ func TestParseSubStatement(t *testing.T) {
 		},
 		{
 			str: "\nsub %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -714,7 +714,7 @@ func TestParseSubCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nsubcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -788,7 +788,7 @@ func TestParseAndStatement(t *testing.T) {
 		},
 		{
 			str: "\nand %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -862,7 +862,7 @@ func TestParseAndCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nandcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -936,7 +936,7 @@ func TestParseOrStatement(t *testing.T) {
 		},
 		{
 			str: "\nor %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -1010,7 +1010,7 @@ func TestParseOrCCStatement(t *testing.T) {
 		},
 		{
 			str: "\norcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -1084,7 +1084,7 @@ func TestParseOrnStatement(t *testing.T) {
 		},
 		{
 			str: "\norn %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -1158,7 +1158,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 		},
 		{
 			str: "\norncc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -1232,7 +1232,7 @@ func TestParseXorStatement(t *testing.T) {
 		},
 		{
 			str: "\nxor %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 
@@ -1241,6 +1241,154 @@ func TestParseXorStatement(t *testing.T) {
 		if xorStmt, valid := tt.stmt.(*ast.XorStatement); valid {
 			ok(t, tc, err)
 			equals(t, tc, xorStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseSLLStatement validates the correct parsing of sll commands.
+func TestParseSLLStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "sll %r1, %r2, %r3",
+			stmt: &ast.SLLStatement{
+				Position:    testPos,
+				Source:      &ast.Register{Name: "%r1"},
+				Operand:     &ast.Register{Name: "%r2"},
+				Destination: &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sll %r1, 32, %r3",
+			stmt: &ast.SLLStatement{
+				Position:    testPos,
+				Source:      &ast.Register{Name: "%r1"},
+				Operand:     ast.Integer(32),
+				Destination: &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sll %r1 %r2, %r3",
+			err: `1:9: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "sll %r1, %r2",
+			err: `1:13: found EOF, expected ","`,
+		},
+		{
+			str: "sll %r1, %r2, 32",
+			err: `1:15: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "sll %r1, x, %r3",
+			err: `1:10: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "sll x, %r2, %r3",
+			err: `1:5: found IDENTIFIER "x", expected REGISTER`,
+		},
+		{
+			str: "sll %r1, %r2, %r3, %r4",
+			err: `1:18: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "sll 32, %r2, %r3",
+			err: `1:5: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "sll %r1, 90000000000, %r3",
+			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+		},
+		{
+			str: "\nsll %r1, %r2, %r3",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if sllStmt, valid := tt.stmt.(*ast.SLLStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, sllStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseSRAStatement validates the correct parsing of sra commands.
+func TestParseSRAStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "sra %r1, %r2, %r3",
+			stmt: &ast.SRAStatement{
+				Position:    testPos,
+				Source:      &ast.Register{Name: "%r1"},
+				Operand:     &ast.Register{Name: "%r2"},
+				Destination: &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sra %r1, 32, %r3",
+			stmt: &ast.SRAStatement{
+				Position:    testPos,
+				Source:      &ast.Register{Name: "%r1"},
+				Operand:     ast.Integer(32),
+				Destination: &ast.Register{Name: "%r3"},
+			},
+		},
+		{
+			str: "sra %r1 %r2, %r3",
+			err: `1:9: found REGISTER "%r2", expected ","`,
+		},
+		{
+			str: "sra %r1, %r2",
+			err: `1:13: found EOF, expected ","`,
+		},
+		{
+			str: "sra %r1, %r2, 32",
+			err: `1:15: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "sra %r1, x, %r3",
+			err: `1:10: found IDENTIFIER "x", expected INTEGER, REGISTER`,
+		},
+		{
+			str: "sra x, %r2, %r3",
+			err: `1:5: found IDENTIFIER "x", expected REGISTER`,
+		},
+		{
+			str: "sra %r1, %r2, %r3, %r4",
+			err: `1:18: found ",", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "sra 32, %r2, %r3",
+			err: `1:5: found INTEGER "32", expected REGISTER`,
+		},
+		{
+			str: "sra %r1, 90000000000, %r3",
+			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+		},
+		{
+			str: "\nsra %r1, %r2, %r3",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if sllStmt, valid := tt.stmt.(*ast.SRAStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, sllStmt, stmt)
 		} else {
 			equals(t, tc, tt.err, err.Error())
 		}
@@ -1306,7 +1454,7 @@ func TestParseXorCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nxorcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
 		},
 	}
 

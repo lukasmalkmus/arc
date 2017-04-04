@@ -99,6 +99,10 @@ func TestScanner_Scan(t *testing.T) {
 		{"XOR", token.XOR, "XOR", 1},
 		{"xorcc", token.XORCC, "xorcc", 1},
 		{"XORCC", token.XORCC, "XORCC", 1},
+		{"sll", token.SLL, "sll", 1},
+		{"SLL", token.SLL, "SLL", 1},
+		{"sra", token.SRA, "sra", 1},
+		{"SRA", token.SRA, "SRA", 1},
 
 		// Directives
 		{".begin", token.BEGIN, ".begin", 1},

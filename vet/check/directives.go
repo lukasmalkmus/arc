@@ -114,8 +114,8 @@ func (c *Directives) checkOrder(prog *ast.Program) []string {
 	if len(orgStmts) == 0 {
 		msg := buildMsg(c, prog.Filename, "missing .org: program code should start at address 2048")
 		res = append(res, msg)
-	} else if val := orgStmts[0].Value; val != 2048 {
-		msg := buildMsg(c, prog.Filename, fmt.Sprintf("program code should start at address 2048, not %d", val))
+	} else if org := orgStmts[0]; org.Value != 2048 {
+		msg := buildMsg(c, org.Pos(), fmt.Sprintf("program code should start at address 2048, not %d", org.Value))
 		res = append(res, msg)
 	}
 

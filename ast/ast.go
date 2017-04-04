@@ -71,8 +71,10 @@ func (*SLLStatement) ref()   {}
 func (*SRAStatement) ref()   {}
 
 // MemoryLocation is implemented by types which can be addressed as locations in
-// memory. An identifier can be addressed as well as expressions and registers.
+// memory. Expressions can be addressed as well as registers.
 type MemoryLocation interface {
+	// memLoc is unexported to ensure implementations of Memory can only
+	// originate in this package.
 	memLoc()
 	String() string
 }

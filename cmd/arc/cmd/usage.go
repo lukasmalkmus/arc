@@ -26,6 +26,7 @@ Logic:
 "or", "orcc"
 "orn", "orncc"
 "xor", "xorcc"
+"sll", "sra"
 
 
 "ld": load a register from main memory. The memory address
@@ -68,12 +69,27 @@ Example usage: orcc %r1, 1, %r2. Meaning: %r2 = %r1 OR 1
 "orn", "orncc": bitwise NOR the source operands into the
 destination register. "orncc" will set the N and Z condition
 codes according to the result.
-Example usage: orncc %r1, %r0, %r1.  Meaning: Complement %r1.
+Example usage: orncc %r1, %r0, %r1. Meaning: Complement %r1.
 
 "xor", "xorcc": bitwise XOR (exclusive OR) the source
 operands into the destination register. "xorcc" will set
 the N and Z condition codes according to the result.
-Example usage: xorcc %r1, %r0, %r1.  Meaning: %r1 = %r1 XOR %r0.
+Example usage: xorcc %r1, %r0, %r1. Meaning: %r1 = %r1 XOR %r0.
+
+"sll": shifts a register to the left by 0-31 bits. The vacant
+bit positions in the right side of the shifted register are
+filled with 0's.
+Example usage: sll %r1, 3, %r4. Meaning: Shift %r1 left by
+3 bits and store in %r4.
+Example usage: sll %r1, %r4, %r5. Meaning: Shift %r1 left
+by the value stored in %r4 and store in %r5.
+
+"sra": shifts a register to the right by 0-31 bits. The
+sign bit is replicated as the value is shifted right.
+Example usage: sra %r1, 3, %r4. Meaning:  Shift %r1 right
+by 3 bits and store in %r4.
+Example usage: sra %r1, %r4, %r5. Meaning: Shift %r1 right
+by the value stored in %r4 and store in %r5.
 `
 
 // usageCmd represents the usage command

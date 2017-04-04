@@ -40,8 +40,13 @@ func (c *Ineffoffset) Run(prog *ast.Program) ([]string, error) {
 	// See if expressions with a zero offset are defined.
 	for _, exp := range exps {
 		if exp.Operator != "" && exp.Offset == 0 {
-			improvedExp := &ast.Expression{Base: exp.Base}
-			msg := buildMsg(c, exp.Pos(), fmt.Sprintf("offset expression %q can be shortened to %q", exp, improvedExp))
+			improve := ""
+			if reg, valid := exp.Base.(*ast.Register); valid {
+				improve = reg.String()
+			} else if ident, valid := exp.Base.(*ast.Identifier); valid {
+				improve = ast.Expression{Base: ident}.String()
+			}
+			msg := buildMsg(c, exp.Pos(), fmt.Sprintf("offset expression %q can be shortened to %q", exp, improve))
 			res = append(res, msg)
 		}
 	}

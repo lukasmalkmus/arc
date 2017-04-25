@@ -18,6 +18,7 @@ type Statement interface {
 	// originate in this package.
 	stmt()
 	Pos() token.Pos
+	Tok() token.Token
 	String() string
 }
 
@@ -138,8 +139,11 @@ func (p *Program) AddStatement(stmts ...Statement) {
 
 // CommentStatement represents a comment.
 type CommentStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Text is the actual text of the comment.
 	Text string
 }
@@ -149,14 +153,26 @@ func (stmt CommentStatement) Pos() token.Pos {
 	return stmt.Position
 }
 
+// Tok returns the statements lexical token.
+func (stmt CommentStatement) Tok() token.Token {
+	return stmt.Token
+}
+
 func (stmt CommentStatement) String() string {
 	return "! " + strings.TrimSpace(stmt.Text[1:])
 }
 
 // BeginStatement marks the beginning of an ARC program.
 type BeginStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+}
+
+// Tok returns the statements lexical token.
+func (stmt BeginStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 // Pos returns the statements position.
@@ -170,6 +186,8 @@ func (stmt BeginStatement) String() string {
 
 // EndStatement marks the end of an ARC program.
 type EndStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
 }
@@ -179,14 +197,22 @@ func (stmt EndStatement) Pos() token.Pos {
 	return stmt.Position
 }
 
+// Tok returns the statements lexical token.
+func (stmt EndStatement) Tok() token.Token {
+	return stmt.Token
+}
+
 func (stmt EndStatement) String() string {
 	return ".end"
 }
 
 // OrgStatement marks a new section of data in memory.
 type OrgStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Value is the memory location.
 	Value Integer
 }
@@ -194,6 +220,11 @@ type OrgStatement struct {
 // Pos returns the statements position.
 func (stmt OrgStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt OrgStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt OrgStatement) String() string {
@@ -205,8 +236,11 @@ func (stmt OrgStatement) String() string {
 
 // LabelStatement represents a label.
 type LabelStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Ident is the labels identifier.
 	Ident *Identifier
 	// Reference is an Identifier, Integer or the Statement the label addresses.
@@ -216,6 +250,11 @@ type LabelStatement struct {
 // Pos returns the statements position.
 func (stmt LabelStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt LabelStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt LabelStatement) String() string {
@@ -228,8 +267,11 @@ func (stmt LabelStatement) String() string {
 
 // LoadStatement represents a load command (ld).
 type LoadStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is the memory location where the value is loaded from.
 	Source MemoryLocation
 	// Destination is the register where the value is loaded to.
@@ -239,6 +281,11 @@ type LoadStatement struct {
 // Pos returns the statements position.
 func (stmt LoadStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt LoadStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt LoadStatement) String() string {
@@ -252,8 +299,11 @@ func (stmt LoadStatement) String() string {
 
 // StoreStatement represents a store command (st).
 type StoreStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is the register where the value is stored from.
 	Source *Register
 	// Destination is the memory location where the value is stored to.
@@ -263,6 +313,11 @@ type StoreStatement struct {
 // Pos returns the statements position.
 func (stmt StoreStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt StoreStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt StoreStatement) String() string {
@@ -276,8 +331,11 @@ func (stmt StoreStatement) String() string {
 
 // AddStatement represents an add command (add).
 type AddStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -290,6 +348,11 @@ type AddStatement struct {
 // Pos returns the statements position.
 func (stmt AddStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt AddStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt AddStatement) String() string {
@@ -305,8 +368,11 @@ func (stmt AddStatement) String() string {
 
 // AddCCStatement represents an add (conditional codes set) command (addcc).
 type AddCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -319,6 +385,11 @@ type AddCCStatement struct {
 // Pos returns the statements position.
 func (stmt AddCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt AddCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt AddCCStatement) String() string {
@@ -334,8 +405,11 @@ func (stmt AddCCStatement) String() string {
 
 // SubStatement represents a sub command (sub).
 type SubStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -348,6 +422,11 @@ type SubStatement struct {
 // Pos returns the statements position.
 func (stmt SubStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt SubStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt SubStatement) String() string {
@@ -363,8 +442,11 @@ func (stmt SubStatement) String() string {
 
 // SubCCStatement represents a sub (conditional codes set) command (subcc).
 type SubCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -377,6 +459,11 @@ type SubCCStatement struct {
 // Pos returns the statements position.
 func (stmt SubCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt SubCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt SubCCStatement) String() string {
@@ -392,8 +479,11 @@ func (stmt SubCCStatement) String() string {
 
 // AndStatement represents an and command (and).
 type AndStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -406,6 +496,11 @@ type AndStatement struct {
 // Pos returns the statements position.
 func (stmt AndStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt AndStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt AndStatement) String() string {
@@ -421,8 +516,11 @@ func (stmt AndStatement) String() string {
 
 // AndCCStatement represents an and (conditional codes set) command (andcc).
 type AndCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -435,6 +533,11 @@ type AndCCStatement struct {
 // Pos returns the statements position.
 func (stmt AndCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt AndCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt AndCCStatement) String() string {
@@ -450,8 +553,11 @@ func (stmt AndCCStatement) String() string {
 
 // OrStatement represents an or command (or).
 type OrStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -464,6 +570,11 @@ type OrStatement struct {
 // Pos returns the statements position.
 func (stmt OrStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt OrStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt OrStatement) String() string {
@@ -479,8 +590,11 @@ func (stmt OrStatement) String() string {
 
 // OrCCStatement represents an or (conditional codes set) command (orcc).
 type OrCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -493,6 +607,11 @@ type OrCCStatement struct {
 // Pos returns the statements position.
 func (stmt OrCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt OrCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt OrCCStatement) String() string {
@@ -508,8 +627,11 @@ func (stmt OrCCStatement) String() string {
 
 // OrnStatement represents a orn command (orn).
 type OrnStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -522,6 +644,11 @@ type OrnStatement struct {
 // Pos returns the statements position.
 func (stmt OrnStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt OrnStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt OrnStatement) String() string {
@@ -537,8 +664,11 @@ func (stmt OrnStatement) String() string {
 
 // OrnCCStatement represents a orn (conditional codes set) command (orncc).
 type OrnCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -551,6 +681,11 @@ type OrnCCStatement struct {
 // Pos returns the statements position.
 func (stmt OrnCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt OrnCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt OrnCCStatement) String() string {
@@ -566,8 +701,11 @@ func (stmt OrnCCStatement) String() string {
 
 // XorStatement represents a xor command (xor).
 type XorStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -580,6 +718,11 @@ type XorStatement struct {
 // Pos returns the statements position.
 func (stmt XorStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt XorStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt XorStatement) String() string {
@@ -595,8 +738,11 @@ func (stmt XorStatement) String() string {
 
 // XorCCStatement represents a xor (conditional codes set) command (xorcc).
 type XorCCStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -609,6 +755,11 @@ type XorCCStatement struct {
 // Pos returns the statements position.
 func (stmt XorCCStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt XorCCStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt XorCCStatement) String() string {
@@ -624,8 +775,11 @@ func (stmt XorCCStatement) String() string {
 
 // SLLStatement represents a shift left logical command (sll).
 type SLLStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -638,6 +792,11 @@ type SLLStatement struct {
 // Pos returns the statements position.
 func (stmt SLLStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt SLLStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt SLLStatement) String() string {
@@ -653,8 +812,11 @@ func (stmt SLLStatement) String() string {
 
 // SRAStatement represents a shift right arithmetic command (sra).
 type SRAStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
 	// Position is the position in the source.
 	Position token.Pos
+
 	// Source is a register acting as first operand.
 	Source *Register
 	// Operand is the second one of the two operands.
@@ -667,6 +829,11 @@ type SRAStatement struct {
 // Pos returns the statements position.
 func (stmt SRAStatement) Pos() token.Pos {
 	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt SRAStatement) Tok() token.Token {
+	return stmt.Token
 }
 
 func (stmt SRAStatement) String() string {
@@ -683,7 +850,9 @@ func (stmt SRAStatement) String() string {
 // Expression is an expression which bundles an identifier with an offset. In
 // ARC an expression is delimited by an opening and a closing square bracket.
 type Expression struct {
+	// Position is the position in the source.
 	Position token.Pos
+
 	// Base is the register or identifer used as base in the expression.
 	Base ExpressionBase
 	// Operator is the operator which is used in the expression.
@@ -711,8 +880,11 @@ func (e Expression) String() string {
 
 // Identifier is a named identifier.
 type Identifier struct {
-	// Position is the tokens position in the source.
+	// Token is the identifiers lexical token.
+	Token token.Token
+	// Position is the position in the source.
 	Position token.Pos
+
 	// Name is the name of the identifier.
 	Name string
 }
@@ -720,6 +892,11 @@ type Identifier struct {
 // Pos returns the statements position.
 func (i Identifier) Pos() token.Pos {
 	return i.Position
+}
+
+// Tok returns the identifiers lexical token.
+func (i Identifier) Tok() token.Token {
+	return i.Token
 }
 
 func (i Identifier) String() string {

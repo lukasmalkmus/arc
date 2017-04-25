@@ -17,8 +17,8 @@ specification and best practices.
 
 Every argument to this command is expected to be a valid
 ARC source file. Passing no argument will format every
-single file having the .arc file extension in the current
-directory.`,
+single file in the current directory having the .arc file
+extension.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Format every file given.
 		if len(args) > 0 {

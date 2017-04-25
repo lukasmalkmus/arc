@@ -30,7 +30,7 @@ the different checks.
 
 Every argument to this command is expected to be a valid
 ARC source file. Passing no argument will vet every single
-file having the .arc file extension in the current directory.`,
+file in the current directory having the .arc file extension.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// List all checks, if requested.
 		if list {

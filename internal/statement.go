@@ -20,6 +20,34 @@ func StatementName(stmt ast.Statement) string {
 		return "LOAD"
 	case *ast.StoreStatement:
 		return "STORE"
+	case *ast.AddStatement:
+		return "ADD"
+	case *ast.AddCCStatement:
+		return "ADDCC"
+	case *ast.SubStatement:
+		return "SUB"
+	case *ast.SubCCStatement:
+		return "SUBCC"
+	case *ast.AndStatement:
+		return "AND"
+	case *ast.AndCCStatement:
+		return "ANDCC"
+	case *ast.OrStatement:
+		return "OR"
+	case *ast.OrCCStatement:
+		return "ORCC"
+	case *ast.OrnStatement:
+		return "ORN"
+	case *ast.OrnCCStatement:
+		return "ORNCC"
+	case *ast.XorStatement:
+		return "XOR"
+	case *ast.XorCCStatement:
+		return "XORCC"
+	case *ast.SLLStatement:
+		return "SLL"
+	case *ast.SRAStatement:
+		return "SRA"
 	default:
 		return ""
 	}

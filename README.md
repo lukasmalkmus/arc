@@ -29,7 +29,6 @@ features that make working with ARC source code a breeze.
 
 #### Todo
   - [ ] **Format invalid ARC source code**
-  - [ ] **Vet invalid ARC source code**
 
 ### Usage
 #### Installation

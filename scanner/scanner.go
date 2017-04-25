@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/lukasmalkmus/arc/token"
 )
@@ -191,12 +192,17 @@ func (s *Scanner) scanInteger() (token.Token, string, token.Pos) {
 	for {
 		if ch, _ := s.read(); ch == eof {
 			break
-		} else if !isDigit(ch) {
+		} else if !isDigit(ch) && ch != 'x' {
 			s.unread()
 			break
 		} else {
 			buf.WriteRune(ch)
 		}
+	}
+
+	// Is the Syntax valid?
+	if _, err := strconv.ParseInt(buf.String(), 0, 64); err != nil {
+		return token.ILLEGAL, buf.String(), pos
 	}
 
 	// Return as an integer.

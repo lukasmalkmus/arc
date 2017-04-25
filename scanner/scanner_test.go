@@ -56,7 +56,11 @@ func TestScanner_Scan(t *testing.T) {
 		{"12", token.INT, "12", 1},
 		{"16", token.INT, "16", 1},
 		{"128", token.INT, "128", 1},
-		{"123x", token.INT, "123", 1},
+		{"123x", token.ILLEGAL, "123x", 1},
+		{"07", token.INT, "07", 1},
+		{"08", token.ILLEGAL, "08", 1}, // Octal out of range.
+		{"0x08", token.INT, "0x08", 1},
+		{"0xx08", token.ILLEGAL, "0xx08", 1}, // Illegal syntax.
 
 		// Operators
 		{"+", token.PLUS, "+", 1},

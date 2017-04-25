@@ -883,10 +883,10 @@ func (p *Parser) parseInteger() (ast.Integer, error) {
 	if p.next(); p.tok != token.INT {
 		return 0, p.newParseError(token.INT)
 	}
-	i, err := strconv.ParseInt(p.lit, 10, 32)
+	i, err := strconv.ParseInt(p.lit, 0, 32)
 	if err != nil {
 		return 0, &ParseError{
-			Message: fmt.Sprintf("INTEGER %q overflows 32 bit integer width", p.lit),
+			Message: fmt.Sprintf("INTEGER %q out of 32 bit integer range", p.lit),
 			Pos:     p.pos,
 		}
 	}

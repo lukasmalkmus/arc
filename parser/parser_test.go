@@ -235,7 +235,7 @@ func TestParseLabelStatement(t *testing.T) {
 		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
-		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" overflows 32 bit integer width`},
+		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" out of 32 bit integer range`},
 	}
 
 	for tc, tt := range tests {
@@ -488,7 +488,7 @@ func TestParseAddStatement(t *testing.T) {
 		},
 		{
 			str: "and %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nadd %r1, %r2, %r3",
@@ -562,7 +562,7 @@ func TestParseAddCCStatement(t *testing.T) {
 		},
 		{
 			str: "andcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\naddcc %r1, %r2, %r3",
@@ -636,7 +636,7 @@ func TestParseSubStatement(t *testing.T) {
 		},
 		{
 			str: "sub %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nsub %r1, %r2, %r3",
@@ -710,7 +710,7 @@ func TestParseSubCCStatement(t *testing.T) {
 		},
 		{
 			str: "subcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nsubcc %r1, %r2, %r3",
@@ -784,7 +784,7 @@ func TestParseAndStatement(t *testing.T) {
 		},
 		{
 			str: "and %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nand %r1, %r2, %r3",
@@ -858,7 +858,7 @@ func TestParseAndCCStatement(t *testing.T) {
 		},
 		{
 			str: "andcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nandcc %r1, %r2, %r3",
@@ -932,7 +932,7 @@ func TestParseOrStatement(t *testing.T) {
 		},
 		{
 			str: "or %r1, 90000000000, %r3",
-			err: `1:9: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:9: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nor %r1, %r2, %r3",
@@ -1006,7 +1006,7 @@ func TestParseOrCCStatement(t *testing.T) {
 		},
 		{
 			str: "orcc %r1, 90000000000, %r3",
-			err: `1:11: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:11: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\norcc %r1, %r2, %r3",
@@ -1080,7 +1080,7 @@ func TestParseOrnStatement(t *testing.T) {
 		},
 		{
 			str: "orn %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\norn %r1, %r2, %r3",
@@ -1154,7 +1154,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 		},
 		{
 			str: "orncc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\norncc %r1, %r2, %r3",
@@ -1228,7 +1228,7 @@ func TestParseXorStatement(t *testing.T) {
 		},
 		{
 			str: "xor %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nxor %r1, %r2, %r3",
@@ -1302,7 +1302,7 @@ func TestParseSLLStatement(t *testing.T) {
 		},
 		{
 			str: "sll %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nsll %r1, %r2, %r3",
@@ -1376,7 +1376,7 @@ func TestParseSRAStatement(t *testing.T) {
 		},
 		{
 			str: "sra %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nsra %r1, %r2, %r3",
@@ -1450,7 +1450,7 @@ func TestParseXorCCStatement(t *testing.T) {
 		},
 		{
 			str: "xorcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" overflows 32 bit integer width`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
 		},
 		{
 			str: "\nxorcc %r1, %r2, %r3",
@@ -1526,7 +1526,7 @@ func TestParseInteger(t *testing.T) {
 		{str: "100", obj: ast.Integer(100)},
 		{str: "001", obj: ast.Integer(1)},
 		{str: "0", obj: ast.Integer(0)},
-		{str: "90000000000000", err: `1:1: INTEGER "90000000000000" overflows 32 bit integer width`},
+		{str: "90000000000000", err: `1:1: INTEGER "90000000000000" out of 32 bit integer range`},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
 	}
 

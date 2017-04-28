@@ -204,7 +204,7 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 
 // parseCommentStatement parses an CommentStatement AST object.
 func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
-	stmt := &ast.CommentStatement{Position: p.pos, Text: p.lit}
+	stmt := &ast.CommentStatement{Token: p.tok, Position: p.pos, Text: p.lit}
 
 	// The comment should end after its literal value.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -217,7 +217,7 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 
 // parseBeginStatement parses an BeginStatement AST object.
 func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
-	stmt := &ast.BeginStatement{Position: p.pos}
+	stmt := &ast.BeginStatement{Token: p.tok, Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -230,7 +230,7 @@ func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 
 // parseEndStatement parses an EndStatement AST object.
 func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
-	stmt := &ast.EndStatement{Position: p.pos}
+	stmt := &ast.EndStatement{Token: p.tok, Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -243,7 +243,7 @@ func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 
 // parseOrgStatement parses an OrgStatement AST object.
 func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
-	stmt := &ast.OrgStatement{Position: p.pos}
+	stmt := &ast.OrgStatement{Token: p.tok, Position: p.pos}
 
 	// The directive should be followed by an integer.
 	val, err := p.parseInteger()
@@ -262,10 +262,10 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 }
 
 func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
-	stmt := &ast.LabelStatement{Position: p.pos}
+	stmt := &ast.LabelStatement{Token: p.tok, Position: p.pos}
 
 	// Create label identifier.
-	stmt.Ident = &ast.Identifier{Position: p.pos, Name: p.lit}
+	stmt.Ident = &ast.Identifier{Token: p.tok, Position: p.pos, Name: p.lit}
 
 	// Is the label already declared? If so, an error is thrown.
 	decl, prs := p.declaredLabels[stmt.Ident.Name]
@@ -321,7 +321,7 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 
 // parseLoadStatement parses an LoadStatement AST object.
 func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
-	stmt := &ast.LoadStatement{Position: p.pos}
+	stmt := &ast.LoadStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source memory location.
 	src, err := p.parseMemoryLocation()
@@ -353,7 +353,7 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 
 // parseStoreStatement parses an StoreStatement AST object.
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
-	stmt := &ast.StoreStatement{Position: p.pos}
+	stmt := &ast.StoreStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	src, err := p.parseRegister()
@@ -385,7 +385,7 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 
 // parseAddStatement parses an AddStatement AST object.
 func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
-	stmt := &ast.AddStatement{Position: p.pos}
+	stmt := &ast.AddStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -437,6 +437,7 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 
 	// Transform to addcc.
 	stmt := &ast.AddCCStatement{
+		Token:       addStmt.Token,
 		Position:    addStmt.Position,
 		Source:      addStmt.Source,
 		Operand:     addStmt.Operand,
@@ -449,7 +450,7 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 
 // parseSubStatement parses an SubStatement AST object.
 func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
-	stmt := &ast.SubStatement{Position: p.pos}
+	stmt := &ast.SubStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -501,6 +502,7 @@ func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
 
 	// Transform to subcc.
 	stmt := &ast.SubCCStatement{
+		Token:       subStmt.Token,
 		Position:    subStmt.Position,
 		Source:      subStmt.Source,
 		Operand:     subStmt.Operand,
@@ -513,7 +515,7 @@ func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
 
 // parseAndStatement parses an AndStatement AST object.
 func (p *Parser) parseAndStatement() (*ast.AndStatement, error) {
-	stmt := &ast.AndStatement{Position: p.pos}
+	stmt := &ast.AndStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -565,6 +567,7 @@ func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
 
 	// Transform to andcc.
 	stmt := &ast.AndCCStatement{
+		Token:       andStmt.Token,
 		Position:    andStmt.Position,
 		Source:      andStmt.Source,
 		Operand:     andStmt.Operand,
@@ -577,7 +580,7 @@ func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
 
 // parseOrStatement parses an OrStatement AST object.
 func (p *Parser) parseOrStatement() (*ast.OrStatement, error) {
-	stmt := &ast.OrStatement{Position: p.pos}
+	stmt := &ast.OrStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -629,6 +632,7 @@ func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
 
 	// Transform to orcc.
 	stmt := &ast.OrCCStatement{
+		Token:       orStmt.Token,
 		Position:    orStmt.Position,
 		Source:      orStmt.Source,
 		Operand:     orStmt.Operand,
@@ -641,7 +645,7 @@ func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
 
 // parseOrnStatement parses an OrnStatement AST object.
 func (p *Parser) parseOrnStatement() (*ast.OrnStatement, error) {
-	stmt := &ast.OrnStatement{Position: p.pos}
+	stmt := &ast.OrnStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -693,6 +697,7 @@ func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
 
 	// Transform to orncc.
 	stmt := &ast.OrnCCStatement{
+		Token:       ornStmt.Token,
 		Position:    ornStmt.Position,
 		Source:      ornStmt.Source,
 		Operand:     ornStmt.Operand,
@@ -705,7 +710,7 @@ func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
 
 // parseXorStatement parses an XorStatement AST object.
 func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
-	stmt := &ast.XorStatement{Position: p.pos}
+	stmt := &ast.XorStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -757,6 +762,7 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 
 	// Transform xto orcc.
 	stmt := &ast.XorCCStatement{
+		Token:       xorStmt.Token,
 		Position:    xorStmt.Position,
 		Source:      xorStmt.Source,
 		Operand:     xorStmt.Operand,
@@ -769,7 +775,7 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 
 // parseSLLStatement parses an SLLStatement AST object.
 func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
-	stmt := &ast.SLLStatement{Position: p.pos}
+	stmt := &ast.SLLStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -813,7 +819,7 @@ func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
 
 // parseSRAStatement parses an SRAStatement AST object.
 func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
-	stmt := &ast.SRAStatement{Position: p.pos}
+	stmt := &ast.SRAStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
 	reg, err := p.parseRegister()
@@ -863,7 +869,7 @@ func (p *Parser) parseIdent() (*ast.Identifier, error) {
 
 	// If the identifier has not been declared yet, we add it to the list of
 	// unresolved identifiers.
-	ident := &ast.Identifier{Position: p.pos, Name: p.lit}
+	ident := &ast.Identifier{Token: p.tok, Position: p.pos, Name: p.lit}
 	if _, prs := p.declaredLabels[p.lit]; !prs {
 		p.unresolvedIdents[p.lit] = ident
 	}

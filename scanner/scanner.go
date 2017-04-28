@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/lukasmalkmus/arc/token"
 )
@@ -68,7 +69,7 @@ func (s *Scanner) Scan() (token.Token, string, token.Pos) {
 	} else if isLetter(ch) {
 		s.unread()
 		return s.scanIdent()
-	} else if isDigit(ch) {
+	} else if isNumber(ch) {
 		s.unread()
 		return s.scanInteger()
 	} else if ch == '%' {
@@ -163,7 +164,7 @@ func (s *Scanner) scanIdent() (token.Token, string, token.Pos) {
 	for {
 		if ch, _ := s.read(); ch == eof {
 			break
-		} else if !isLetter(ch) && !isDigit(ch) {
+		} else if !isLetter(ch) && !isNumber(ch) {
 			s.unread()
 			break
 		} else {
@@ -186,13 +187,17 @@ func (s *Scanner) scanInteger() (token.Token, string, token.Pos) {
 	var buf bytes.Buffer
 	ch, pos := s.read()
 	buf.WriteRune(ch)
+	sawX := false
 
 	// Read every subsequent integer character into the buffer.
 	// Non-integer characters and EOF will cause the loop to exit.
 	for {
 		if ch, _ := s.read(); ch == eof {
 			break
-		} else if !isDigit(ch) && ch != 'x' {
+		} else if (ch == 'x' || ch == 'X') && sawX {
+			s.unread()
+			break
+		} else if !isNumber(ch) && (ch != 'x' && ch != 'X') {
 			s.unread()
 			break
 		} else {
@@ -204,9 +209,10 @@ func (s *Scanner) scanInteger() (token.Token, string, token.Pos) {
 	if _, err := strconv.ParseInt(buf.String(), 0, 64); err != nil {
 		return token.ILLEGAL, buf.String(), pos
 	}
+	val := strings.Replace(buf.String(), "X", "x", -1)
 
 	// Return as an integer.
-	return token.INT, buf.String(), pos
+	return token.INT, val, pos
 }
 
 // scanNewline consumes the current rune and all contiguous newline.
@@ -257,7 +263,7 @@ func (s *Scanner) scanRegister() (token.Token, string, token.Pos) {
 	for {
 		if ch, _ := s.read(); ch == eof {
 			break
-		} else if !isLetter(ch) && !isDigit(ch) {
+		} else if !isLetter(ch) && !isNumber(ch) {
 			s.unread()
 			break
 		} else {
@@ -333,8 +339,8 @@ func isNewline(ch rune) bool { return ch == '\n' || ch == '\r' }
 // isLetter returns true if the rune is a letter.
 func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') }
 
-// isDigit returns true if the rune is a digit.
-func isDigit(ch rune) bool { return (ch >= '0' && ch <= '9') }
+// isNumber returns true if the rune is a digit.
+func isNumber(ch rune) bool { return (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F') }
 
 // stripCR removes every carriage-return from a slice of bytes, effectively
 // turning a CRLF into a LF.

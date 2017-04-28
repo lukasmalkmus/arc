@@ -53,7 +53,7 @@ type Reference interface {
 	String() string
 }
 
-func (Integer) ref()         {}
+func (*Integer) ref()        {}
 func (*LoadStatement) ref()  {}
 func (*StoreStatement) ref() {}
 func (*AddStatement) ref()   {}
@@ -104,7 +104,7 @@ type Operand interface {
 	String() string
 }
 
-func (Integer) op()   {}
+func (*Integer) op()  {}
 func (*Register) op() {}
 
 // Statements is a list of statements.
@@ -214,7 +214,7 @@ type OrgStatement struct {
 	Position token.Pos
 
 	// Value is the memory location.
-	Value Integer
+	Value *Integer
 }
 
 // Pos returns the statements position.
@@ -858,7 +858,7 @@ type Expression struct {
 	// Operator is the operator which is used in the expression.
 	Operator string
 	// Offset is the second operand.
-	Offset Integer
+	Offset *Integer
 }
 
 // Pos returns the statements position.
@@ -872,7 +872,7 @@ func (e Expression) String() string {
 	buf.WriteString(e.Base.String())
 	if e.Operator != "" {
 		buf.WriteString(e.Operator)
-		buf.WriteString(strconv.FormatInt(int64(e.Offset), 10))
+		buf.WriteString(strconv.FormatInt(int64(e.Offset.Value), 10))
 	}
 	buf.WriteString("]")
 	return buf.String()
@@ -913,11 +913,22 @@ func (r Register) String() string {
 	return r.Name
 }
 
-// Integer represents a 32 bit integer value.
-type Integer int32
+// Integer represents a 32 bit integer.
+type Integer struct {
+	// Token is the identifiers lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Literal is the string representation of the value (hex, oct, dec).
+	Literal string
+	// Value is the actual 32 bit integer value.
+	Value int32
+}
 
 func (i Integer) String() string {
-	return strconv.FormatInt(int64(i), 10)
+	// We return the literal representation to preserve the format.
+	return i.Literal
 }
 
 /*

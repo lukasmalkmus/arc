@@ -885,33 +885,33 @@ func (p *Parser) parseRegister() (*ast.Register, error) {
 }
 
 // parseInteger parses an integer and returns an Integer AST object.
-func (p *Parser) parseInteger() (ast.Integer, error) {
+func (p *Parser) parseInteger() (*ast.Integer, error) {
 	if p.next(); p.tok != token.INT {
-		return 0, p.newParseError(token.INT)
+		return nil, p.newParseError(token.INT)
 	}
 	i, err := strconv.ParseInt(p.lit, 0, 32)
 	if err != nil {
-		return 0, &ParseError{
-			Message: fmt.Sprintf("INTEGER %q out of 32 bit integer range", p.lit),
+		return nil, &ParseError{
+			Message: fmt.Sprintf("INTEGER %q out of 32 bit range", p.lit),
 			Pos:     p.pos,
 		}
 	}
-	return ast.Integer(i), nil
+	return &ast.Integer{Token: p.tok, Position: p.pos, Value: int32(i), Literal: p.lit}, nil
 }
 
 // parseSIMM13 parses an SIMM13 integer.
-func (p *Parser) parseSIMM13() (ast.Integer, error) {
+func (p *Parser) parseSIMM13() (*ast.Integer, error) {
 	if p.next(); p.tok != token.INT {
-		return 0, p.newParseError(token.INT)
+		return nil, p.newParseError(token.INT)
 	}
-	val, err := strconv.ParseUint(p.lit, 0, 13)
+	i, err := strconv.ParseUint(p.lit, 0, 13)
 	if err != nil {
-		return 0, &ParseError{
+		return nil, &ParseError{
 			Message: fmt.Sprintf("INTEGER %q is not a valid SIMM13", p.lit),
 			Pos:     p.pos,
 		}
 	}
-	return ast.Integer(val), nil
+	return &ast.Integer{Token: p.tok, Position: p.pos, Value: int32(i), Literal: p.lit}, nil
 }
 
 // parseExpression parses an expression and creates an Expression AST object.

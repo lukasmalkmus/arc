@@ -39,7 +39,7 @@ func (c *Ineffoffset) Run(prog *ast.Program) ([]string, error) {
 
 	// See if expressions with a zero offset are defined.
 	for _, exp := range exps {
-		if exp.Operator != "" && exp.Offset == 0 {
+		if exp.Operator != "" && exp.Offset.Value == 0 {
 			improve := ""
 			if reg, valid := exp.Base.(*ast.Register); valid {
 				improve = reg.String()

@@ -71,8 +71,8 @@ func (c *Directives) checkOrder(prog *ast.Program) []string {
 			orgStmt := stmt.(*ast.OrgStatement)
 			orgStmts = append(orgStmts, orgStmt)
 			if len(orgStmts) > 1 {
-				if prev := orgStmts[len(orgStmts)-2]; prev.Value >= orgStmt.Value {
-					msg := buildMsg(c, stmt.Pos(), fmt.Sprintf(".org memory address %d must be greater than address %d of .org at %s", orgStmt.Value, prev.Value, prev.Pos().NoFile()))
+				if prev := orgStmts[len(orgStmts)-2]; prev.Value.Value >= orgStmt.Value.Value {
+					msg := buildMsg(c, stmt.Pos(), fmt.Sprintf(".org memory address %d must be greater than address %d of .org at %s", orgStmt.Value.Value, prev.Value.Value, prev.Pos().NoFile()))
 					res = append(res, msg)
 				}
 			}
@@ -114,8 +114,8 @@ func (c *Directives) checkOrder(prog *ast.Program) []string {
 	if len(orgStmts) == 0 {
 		msg := buildMsg(c, prog.Filename, "missing .org: program code should start at address 2048")
 		res = append(res, msg)
-	} else if org := orgStmts[0]; org.Value != 2048 {
-		msg := buildMsg(c, org.Pos(), fmt.Sprintf("program code should start at address 2048, not %d", org.Value))
+	} else if org := orgStmts[0]; org.Value.Value != 2048 {
+		msg := buildMsg(c, org.Pos(), fmt.Sprintf("program code should start at address 2048, not %d", org.Value.Value))
 		res = append(res, msg)
 	}
 

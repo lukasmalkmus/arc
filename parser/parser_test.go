@@ -187,7 +187,7 @@ func TestParseOrgStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".org 2048", stmt: &ast.OrgStatement{Token: 41, Position: testPos, Value: ast.Integer(2048)}},
+		{str: ".org 2048", stmt: &ast.OrgStatement{Token: 41, Position: testPos, Value: &ast.Integer{Token: 10, Position: posAfter(6), Value: 2048, Literal: "2048"}}},
 		{str: ".org 2048 128", err: `1:11: found INTEGER "128", expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `1:5: found EOF, expected INTEGER`},
 		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
@@ -218,7 +218,7 @@ func TestParseLabelStatement(t *testing.T) {
 				Token:     8,
 				Position:  testPos,
 				Ident:     &ast.Identifier{Token: 8, Position: testPos, Name: "x"},
-				Reference: ast.Integer(25),
+				Reference: &ast.Integer{Token: 10, Position: posAfter(4), Value: 25, Literal: "25"},
 			},
 		},
 		{
@@ -229,7 +229,7 @@ func TestParseLabelStatement(t *testing.T) {
 				Ident:    &ast.Identifier{Token: 8, Position: testPos, Name: "mylabel"},
 				Reference: &ast.LoadStatement{
 					Token:       21,
-					Position:    token.Pos{Line: 1, Char: 10},
+					Position:    posAfter(10),
 					Source:      &ast.Register{Name: "%r1"},
 					Destination: &ast.Register{Name: "%r2"},
 				},
@@ -238,7 +238,7 @@ func TestParseLabelStatement(t *testing.T) {
 		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
 		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
-		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" out of 32 bit integer range`},
+		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" out of 32 bit range`},
 	}
 
 	for tc, tt := range tests {
@@ -274,9 +274,9 @@ func TestParseLoadStatement(t *testing.T) {
 				Token:    21,
 				Position: testPos,
 				Source: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 4},
+					Position: posAfter(4),
 					Base: &ast.Identifier{Token: 8,
-						Position: token.Pos{Line: 1, Char: 5},
+						Position: posAfter(5),
 						Name:     "x",
 					},
 				},
@@ -289,10 +289,10 @@ func TestParseLoadStatement(t *testing.T) {
 				Token:    21,
 				Position: testPos,
 				Source: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 4},
+					Position: posAfter(4),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   8191,
+					Offset:   &ast.Integer{Token: 10, Position: posAfter(9), Value: 8191, Literal: "8191"},
 				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -303,10 +303,10 @@ func TestParseLoadStatement(t *testing.T) {
 				Token:    21,
 				Position: testPos,
 				Source: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 4},
+					Position: posAfter(4),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   0,
+					Offset:   &ast.Integer{Token: 10, Position: posAfter(9), Value: 0, Literal: "0"},
 				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -371,9 +371,9 @@ func TestParseStoreStatement(t *testing.T) {
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 9},
+					Position: posAfter(9),
 					Base: &ast.Identifier{Token: 8,
-						Position: token.Pos{Line: 1, Char: 10},
+						Position: posAfter(10),
 						Name:     "x",
 					},
 				},
@@ -386,10 +386,10 @@ func TestParseStoreStatement(t *testing.T) {
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 9},
+					Position: posAfter(9),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   8191,
+					Offset:   &ast.Integer{Token: 10, Position: posAfter(14), Value: 8191, Literal: "8191"},
 				},
 			},
 		},
@@ -400,10 +400,10 @@ func TestParseStoreStatement(t *testing.T) {
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
-					Position: token.Pos{Line: 1, Char: 9},
+					Position: posAfter(9),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   0,
+					Offset:   &ast.Integer{Token: 10, Position: posAfter(14), Value: 0, Literal: "0"},
 				},
 			},
 		},
@@ -467,7 +467,7 @@ func TestParseAddStatement(t *testing.T) {
 				Token:       23,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -501,7 +501,7 @@ func TestParseAddStatement(t *testing.T) {
 		},
 		{
 			str: "and %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nadd %r1, %r2, %r3",
@@ -543,7 +543,7 @@ func TestParseAddCCStatement(t *testing.T) {
 				Token:       24,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -577,7 +577,7 @@ func TestParseAddCCStatement(t *testing.T) {
 		},
 		{
 			str: "andcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\naddcc %r1, %r2, %r3",
@@ -619,7 +619,7 @@ func TestParseSubStatement(t *testing.T) {
 				Token:       25,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -653,7 +653,7 @@ func TestParseSubStatement(t *testing.T) {
 		},
 		{
 			str: "sub %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nsub %r1, %r2, %r3",
@@ -695,7 +695,7 @@ func TestParseSubCCStatement(t *testing.T) {
 				Token:       26,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -729,7 +729,7 @@ func TestParseSubCCStatement(t *testing.T) {
 		},
 		{
 			str: "subcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nsubcc %r1, %r2, %r3",
@@ -771,7 +771,7 @@ func TestParseAndStatement(t *testing.T) {
 				Token:       27,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -805,7 +805,7 @@ func TestParseAndStatement(t *testing.T) {
 		},
 		{
 			str: "and %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nand %r1, %r2, %r3",
@@ -847,7 +847,7 @@ func TestParseAndCCStatement(t *testing.T) {
 				Token:       28,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -881,7 +881,7 @@ func TestParseAndCCStatement(t *testing.T) {
 		},
 		{
 			str: "andcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nandcc %r1, %r2, %r3",
@@ -923,7 +923,7 @@ func TestParseOrStatement(t *testing.T) {
 				Token:       29,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(9), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -957,7 +957,7 @@ func TestParseOrStatement(t *testing.T) {
 		},
 		{
 			str: "or %r1, 90000000000, %r3",
-			err: `1:9: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:9: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nor %r1, %r2, %r3",
@@ -999,7 +999,7 @@ func TestParseOrCCStatement(t *testing.T) {
 				Token:       30,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(11), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1033,7 +1033,7 @@ func TestParseOrCCStatement(t *testing.T) {
 		},
 		{
 			str: "orcc %r1, 90000000000, %r3",
-			err: `1:11: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:11: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\norcc %r1, %r2, %r3",
@@ -1075,7 +1075,7 @@ func TestParseOrnStatement(t *testing.T) {
 				Token:       31,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1109,7 +1109,7 @@ func TestParseOrnStatement(t *testing.T) {
 		},
 		{
 			str: "orn %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\norn %r1, %r2, %r3",
@@ -1151,7 +1151,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 				Token:       32,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1185,7 +1185,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 		},
 		{
 			str: "orncc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\norncc %r1, %r2, %r3",
@@ -1227,7 +1227,7 @@ func TestParseXorStatement(t *testing.T) {
 				Token:       33,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1261,7 +1261,7 @@ func TestParseXorStatement(t *testing.T) {
 		},
 		{
 			str: "xor %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nxor %r1, %r2, %r3",
@@ -1303,7 +1303,7 @@ func TestParseXorCCStatement(t *testing.T) {
 				Token:       34,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1337,7 +1337,7 @@ func TestParseXorCCStatement(t *testing.T) {
 		},
 		{
 			str: "xorcc %r1, 90000000000, %r3",
-			err: `1:12: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:12: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nxorcc %r1, %r2, %r3",
@@ -1379,7 +1379,7 @@ func TestParseSLLStatement(t *testing.T) {
 				Token:       35,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1413,7 +1413,7 @@ func TestParseSLLStatement(t *testing.T) {
 		},
 		{
 			str: "sll %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nsll %r1, %r2, %r3",
@@ -1455,7 +1455,7 @@ func TestParseSRAStatement(t *testing.T) {
 				Token:       36,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     ast.Integer(32),
+				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1489,7 +1489,7 @@ func TestParseSRAStatement(t *testing.T) {
 		},
 		{
 			str: "sra %r1, 90000000000, %r3",
-			err: `1:10: INTEGER "90000000000" out of 32 bit integer range`,
+			err: `1:10: INTEGER "90000000000" out of 32 bit range`,
 		},
 		{
 			str: "\nsra %r1, %r2, %r3",
@@ -1558,14 +1558,15 @@ func TestParseRegister(t *testing.T) {
 func TestParseInteger(t *testing.T) {
 	tests := []struct {
 		str string
-		obj ast.Integer
+		obj *ast.Integer
 		err string
 	}{
-		{str: "0", obj: ast.Integer(0)},
-		{str: "100", obj: ast.Integer(100)},
-		{str: "001", obj: ast.Integer(1)},
-		{str: "0", obj: ast.Integer(0)},
-		{str: "90000000000000", err: `1:1: INTEGER "90000000000000" out of 32 bit integer range`},
+		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "100", obj: &ast.Integer{Token: 10, Position: testPos, Value: 100, Literal: "100"}},
+		{str: "001", obj: &ast.Integer{Token: 10, Position: testPos, Value: 1, Literal: "001"}},
+		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "0x800", obj: &ast.Integer{Token: 10, Position: testPos, Value: 2048, Literal: "0x800"}},
+		{str: "90000000000000", err: `1:1: INTEGER "90000000000000" out of 32 bit range`},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
 	}
 
@@ -1584,14 +1585,15 @@ func TestParseInteger(t *testing.T) {
 func TestParseSIMM13(t *testing.T) {
 	tests := []struct {
 		str string
-		obj ast.Integer
+		obj *ast.Integer
 		err string
 	}{
-		{str: "0", obj: ast.Integer(0)},
-		{str: "100", obj: ast.Integer(100)},
-		{str: "001", obj: ast.Integer(1)},
-		{str: "0", obj: ast.Integer(0)},
-		{str: "8191", obj: ast.Integer(8191)},
+		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "100", obj: &ast.Integer{Token: 10, Position: testPos, Value: 100, Literal: "100"}},
+		{str: "001", obj: &ast.Integer{Token: 10, Position: testPos, Value: 1, Literal: "001"}},
+		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "8191", obj: &ast.Integer{Token: 10, Position: testPos, Value: 8191, Literal: "8191"}},
+		{str: "0x800", obj: &ast.Integer{Token: 10, Position: testPos, Value: 2048, Literal: "0x800"}},
 		{str: "8192", err: `1:1: INTEGER "8192" is not a valid SIMM13`},
 		{str: "-1", err: `1:1: found "-", expected INTEGER`},
 	}
@@ -1614,9 +1616,9 @@ func TestParseExpression(t *testing.T) {
 		obj *ast.Expression
 		err string
 	}{
-		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 8191}},
-		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: 0}},
-		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Token: 8, Position: token.Pos{Line: 1, Char: 2}, Name: "x"}, Operator: "", Offset: 0}},
+		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: 10, Position: posAfter(6), Value: 8191, Literal: "8191"}}},
+		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: 10, Position: posAfter(6), Value: 0, Literal: "0"}}},
+		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Token: 8, Position: posAfter(2), Name: "x"}, Operator: "", Offset: nil}},
 		{str: "x]", err: `1:1: found IDENTIFIER "x", expected "["`},
 		{str: "[+8191]", err: `1:2: found "+", expected IDENTIFIER, REGISTER`},
 		{str: "[0+8191]", err: `1:2: found INTEGER "0", expected IDENTIFIER, REGISTER`},
@@ -1631,6 +1633,7 @@ func TestParseExpression(t *testing.T) {
 		if err == nil {
 			ok(t, i, err)
 			equals(t, i, tt.obj, exp)
+
 		} else {
 			equals(t, i, tt.err, err.Error())
 		}
@@ -1644,7 +1647,7 @@ func TestParseOperand(t *testing.T) {
 		obj ast.Operand
 		err string
 	}{
-		{str: "64", obj: ast.Integer(64)},
+		{str: "64", obj: &ast.Integer{Token: 10, Position: testPos, Value: 64, Literal: "64"}},
 		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER, REGISTER`},
 	}
@@ -1717,6 +1720,10 @@ func TestExpectStatementEnd(t *testing.T) {
 			equals(t, i, tt.err, err.Error())
 		}
 	}
+}
+
+func posAfter(char int) token.Pos {
+	return token.Pos{Line: 1, Char: char}
 }
 
 // assert fails the test if the condition is false.

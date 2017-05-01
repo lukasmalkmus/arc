@@ -11,7 +11,7 @@ type Pos struct {
 
 // String returns a string representation of the Position.
 func (p Pos) String() string {
-	if (p.Line == 0 || p.Char == 0) && p.Filename == "" {
+	if (p.Line <= 0 && p.Char <= 0) && p.Filename == "" {
 		return fmt.Sprintf("INVALID POSITION")
 	} else if p.Filename == "" {
 		return fmt.Sprintf("%d:%d", p.Line, p.Char)

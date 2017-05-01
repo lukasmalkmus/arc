@@ -43,6 +43,11 @@ func (*XorStatement) stmt()     {}
 func (*XorCCStatement) stmt()   {}
 func (*SLLStatement) stmt()     {}
 func (*SRAStatement) stmt()     {}
+func (*BEStatement) stmt()      {}
+func (*BNEStatement) stmt()     {}
+func (*BNEGStatement) stmt()    {}
+func (*BPOSStatement) stmt()    {}
+func (*BAStatement) stmt()      {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -844,6 +849,146 @@ func (stmt SRAStatement) String() string {
 	buf.WriteString(stmt.Operand.String())
 	buf.WriteString(", ")
 	buf.WriteString(stmt.Destination.String())
+	return buf.String()
+}
+
+// BEStatement represents a "branch on equal to zero" command (be).
+type BEStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label the branch statement will go to.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt BEStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt BEStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt BEStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("be ")
+	buf.WriteString(stmt.Target.String())
+	return buf.String()
+}
+
+// BNEStatement represents a "branch on not equal" command (bne).
+type BNEStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label the branch statement will go to.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt BNEStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt BNEStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt BNEStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("bne ")
+	buf.WriteString(stmt.Target.String())
+	return buf.String()
+}
+
+// BNEGStatement represents a "branch on negative" command (bneg).
+type BNEGStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label the branch statement will go to.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt BNEGStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt BNEGStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt BNEGStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("bneg ")
+	buf.WriteString(stmt.Target.String())
+	return buf.String()
+}
+
+// BPOSStatement represents a "branch on positive" command (bpos).
+type BPOSStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label the branch statement will go to.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt BPOSStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt BPOSStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt BPOSStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("bpos ")
+	buf.WriteString(stmt.Target.String())
+	return buf.String()
+}
+
+// BAStatement represents a "branch always" command (ba).
+type BAStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label the branch statement will go to.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt BAStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt BAStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt BAStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("ba ")
+	buf.WriteString(stmt.Target.String())
 	return buf.String()
 }
 

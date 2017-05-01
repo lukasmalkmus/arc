@@ -75,8 +75,8 @@ func TestParse(t *testing.T) {
 		y: x: z
 		ld %r3, %r4
 		.end`,
-			err: `3:6: found "ld", expected "[", REGISTER
-7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `3:6: found KEYWORD "ld", expected "[", REGISTER
+7:6: found IDENTIFIER "x", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 		{
 			prog: `
@@ -117,7 +117,7 @@ func TestParseCommentStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Token: 5, Position: testPos, Text: "!  This is a comment  "}},
+		{str: "!  This is a comment  ", stmt: &ast.CommentStatement{Token: token.COMMENT, Position: testPos, Text: "!  This is a comment  "}},
 		{str: "This is not a comment", err: `1:6: found IDENTIFIER "is", expected ":"`},
 	}
 
@@ -139,8 +139,8 @@ func TestParseBeginStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".begin", stmt: &ast.BeginStatement{Token: 39, Position: testPos}},
-		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
+		{str: ".begin", stmt: &ast.BeginStatement{Token: token.BEGIN, Position: testPos}},
+		{str: ".beg", err: `1:1: found ILLEGAL ".beg", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`},
 		{str: "begin", err: `1:6: found EOF, expected ":"`},
 		{str: ".begin 123", err: `1:8: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -163,8 +163,8 @@ func TestParseEndStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".end", stmt: &ast.EndStatement{Token: 40, Position: testPos}},
-		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
+		{str: ".end", stmt: &ast.EndStatement{Token: token.END, Position: testPos}},
+		{str: ".ed", err: `1:1: found ILLEGAL ".ed", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`},
 		{str: "end", err: `1:4: found EOF, expected ":"`},
 		{str: ".end 123", err: `1:6: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
@@ -187,10 +187,10 @@ func TestParseOrgStatement(t *testing.T) {
 		stmt ast.Statement
 		err  string
 	}{
-		{str: ".org 2048", stmt: &ast.OrgStatement{Token: 41, Position: testPos, Value: &ast.Integer{Token: 10, Position: posAfter(6), Value: 2048, Literal: "2048"}}},
+		{str: ".org 2048", stmt: &ast.OrgStatement{Token: token.ORG, Position: testPos, Value: &ast.Integer{Token: token.INT, Position: posAfter(6), Value: 2048, Literal: "2048"}}},
 		{str: ".org 2048 128", err: `1:11: found INTEGER "128", expected COMMENT, NEWLINE, EOF`},
 		{str: ".org", err: `1:5: found EOF, expected INTEGER`},
-		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
+		{str: ".og", err: `1:1: found ILLEGAL ".og", expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`},
 		{str: "org", err: `1:4: found EOF, expected ":"`},
 	}
 
@@ -215,27 +215,27 @@ func TestParseLabelStatement(t *testing.T) {
 		{
 			str: "x: 25",
 			stmt: &ast.LabelStatement{
-				Token:     8,
+				Token:     token.IDENT,
 				Position:  testPos,
-				Ident:     &ast.Identifier{Token: 8, Position: testPos, Name: "x"},
-				Reference: &ast.Integer{Token: 10, Position: posAfter(4), Value: 25, Literal: "25"},
+				Ident:     &ast.Identifier{Token: token.IDENT, Position: testPos, Name: "x"},
+				Reference: &ast.Integer{Token: token.INT, Position: posAfter(4), Value: 25, Literal: "25"},
 			},
 		},
 		{
 			str: "mylabel: ld %r1, %r2",
 			stmt: &ast.LabelStatement{
-				Token:    8,
+				Token:    token.IDENT,
 				Position: testPos,
-				Ident:    &ast.Identifier{Token: 8, Position: testPos, Name: "mylabel"},
+				Ident:    &ast.Identifier{Token: token.IDENT, Position: testPos, Name: "mylabel"},
 				Reference: &ast.LoadStatement{
-					Token:       21,
+					Token:       token.LOAD,
 					Position:    posAfter(10),
 					Source:      &ast.Register{Name: "%r1"},
 					Destination: &ast.Register{Name: "%r2"},
 				},
 			},
 		},
-		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`},
+		{str: "x: y: 25", err: `1:4: found IDENTIFIER "y", expected INTEGER, "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`},
 		{str: "x: 25;", err: `1:6: found ILLEGAL ";", expected COMMENT, NEWLINE, EOF`},
 		{str: "x: ld", err: `1:6: found EOF, expected "[", REGISTER`},
 		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" out of 32 bit range`},
@@ -262,7 +262,7 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld %r1, %r2",
 			stmt: &ast.LoadStatement{
-				Token:       21,
+				Token:       token.LOAD,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Destination: &ast.Register{Name: "%r2"},
@@ -271,11 +271,11 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [x], %r2",
 			stmt: &ast.LoadStatement{
-				Token:    21,
+				Token:    token.LOAD,
 				Position: testPos,
 				Source: &ast.Expression{
 					Position: posAfter(4),
-					Base: &ast.Identifier{Token: 8,
+					Base: &ast.Identifier{Token: token.IDENT,
 						Position: posAfter(5),
 						Name:     "x",
 					},
@@ -286,13 +286,13 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [%r1+8191], %r2",
 			stmt: &ast.LoadStatement{
-				Token:    21,
+				Token:    token.LOAD,
 				Position: testPos,
 				Source: &ast.Expression{
 					Position: posAfter(4),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   &ast.Integer{Token: 10, Position: posAfter(9), Value: 8191, Literal: "8191"},
+					Offset:   &ast.Integer{Token: token.INT, Position: posAfter(9), Value: 8191, Literal: "8191"},
 				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -300,13 +300,13 @@ func TestParseLoadStatement(t *testing.T) {
 		{
 			str: "ld [%r1+0], %r2",
 			stmt: &ast.LoadStatement{
-				Token:    21,
+				Token:    token.LOAD,
 				Position: testPos,
 				Source: &ast.Expression{
 					Position: posAfter(4),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   &ast.Integer{Token: 10, Position: posAfter(9), Value: 0, Literal: "0"},
+					Offset:   &ast.Integer{Token: token.INT, Position: posAfter(9), Value: 0, Literal: "0"},
 				},
 				Destination: &ast.Register{Name: "%r2"},
 			},
@@ -317,15 +317,15 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "ld ld, %r2",
-			err: `1:4: found "ld", expected "[", REGISTER`,
+			err: `1:4: found KEYWORD "ld", expected "[", REGISTER`,
+		},
+		{
+			str: "ld %r1, ld",
+			err: `1:9: found KEYWORD "ld", expected REGISTER`,
 		},
 		{
 			str: "ld %r1 %r2",
 			err: `1:8: found REGISTER "%r2", expected ","`,
-		},
-		{
-			str: "ld %r1, ld",
-			err: `1:9: found "ld", expected REGISTER`,
 		},
 		{
 			str: "ld %r1, %r2, %r3",
@@ -333,7 +333,7 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 		{
 			str: "\nld %r1, %r2",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -358,7 +358,7 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, %r1",
 			stmt: &ast.StoreStatement{
-				Token:       22,
+				Token:       token.STORE,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r2"},
 				Destination: &ast.Register{Name: "%r1"},
@@ -367,12 +367,12 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, [x]",
 			stmt: &ast.StoreStatement{
-				Token:    22,
+				Token:    token.STORE,
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
 					Position: posAfter(9),
-					Base: &ast.Identifier{Token: 8,
+					Base: &ast.Identifier{Token: token.IDENT,
 						Position: posAfter(10),
 						Name:     "x",
 					},
@@ -382,28 +382,28 @@ func TestParseStoreStatement(t *testing.T) {
 		{
 			str: "st %r2, [%r1+8191]",
 			stmt: &ast.StoreStatement{
-				Token:    22,
+				Token:    token.STORE,
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
 					Position: posAfter(9),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   &ast.Integer{Token: 10, Position: posAfter(14), Value: 8191, Literal: "8191"},
+					Offset:   &ast.Integer{Token: token.INT, Position: posAfter(14), Value: 8191, Literal: "8191"},
 				},
 			},
 		},
 		{
 			str: "st %r2, [%r1+0]",
 			stmt: &ast.StoreStatement{
-				Token:    22,
+				Token:    token.STORE,
 				Position: testPos,
 				Source:   &ast.Register{Name: "%r2"},
 				Destination: &ast.Expression{
 					Position: posAfter(9),
 					Base:     &ast.Register{Name: "%r1"},
 					Operator: "+",
-					Offset:   &ast.Integer{Token: 10, Position: posAfter(14), Value: 0, Literal: "0"},
+					Offset:   &ast.Integer{Token: token.INT, Position: posAfter(14), Value: 0, Literal: "0"},
 				},
 			},
 		},
@@ -413,15 +413,15 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "st st, %r1",
-			err: `1:4: found "st", expected REGISTER`,
+			err: `1:4: found KEYWORD "st", expected REGISTER`,
+		},
+		{
+			str: "st %r2, st",
+			err: `1:9: found KEYWORD "st", expected "[", REGISTER`,
 		},
 		{
 			str: "st %r2 %r1",
 			err: `1:8: found REGISTER "%r1", expected ","`,
-		},
-		{
-			str: "st %r2, st",
-			err: `1:9: found "st", expected "[", REGISTER`,
 		},
 		{
 			str: "st %r2, %r1, %r3",
@@ -429,7 +429,7 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 		{
 			str: "\nst %r2, %r1",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -454,7 +454,7 @@ func TestParseAddStatement(t *testing.T) {
 		{
 			str: "add %r1, %r2, %r3",
 			stmt: &ast.AddStatement{
-				Token:       23,
+				Token:       token.ADD,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -464,10 +464,10 @@ func TestParseAddStatement(t *testing.T) {
 		{
 			str: "add %r1, 32, %r3",
 			stmt: &ast.AddStatement{
-				Token:       23,
+				Token:       token.ADD,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -505,7 +505,7 @@ func TestParseAddStatement(t *testing.T) {
 		},
 		{
 			str: "\nadd %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -530,7 +530,7 @@ func TestParseAddCCStatement(t *testing.T) {
 		{
 			str: "addcc %r1, %r2, %r3",
 			stmt: &ast.AddCCStatement{
-				Token:       24,
+				Token:       token.ADDCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -540,10 +540,10 @@ func TestParseAddCCStatement(t *testing.T) {
 		{
 			str: "addcc %r1, 32, %r3",
 			stmt: &ast.AddCCStatement{
-				Token:       24,
+				Token:       token.ADDCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -581,7 +581,7 @@ func TestParseAddCCStatement(t *testing.T) {
 		},
 		{
 			str: "\naddcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -606,7 +606,7 @@ func TestParseSubStatement(t *testing.T) {
 		{
 			str: "sub %r1, %r2, %r3",
 			stmt: &ast.SubStatement{
-				Token:       25,
+				Token:       token.SUB,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -616,10 +616,10 @@ func TestParseSubStatement(t *testing.T) {
 		{
 			str: "sub %r1, 32, %r3",
 			stmt: &ast.SubStatement{
-				Token:       25,
+				Token:       token.SUB,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -657,7 +657,7 @@ func TestParseSubStatement(t *testing.T) {
 		},
 		{
 			str: "\nsub %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -682,7 +682,7 @@ func TestParseSubCCStatement(t *testing.T) {
 		{
 			str: "subcc %r1, %r2, %r3",
 			stmt: &ast.SubCCStatement{
-				Token:       26,
+				Token:       token.SUBCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -692,10 +692,10 @@ func TestParseSubCCStatement(t *testing.T) {
 		{
 			str: "subcc %r1, 32, %r3",
 			stmt: &ast.SubCCStatement{
-				Token:       26,
+				Token:       token.SUBCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -733,7 +733,7 @@ func TestParseSubCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nsubcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -758,7 +758,7 @@ func TestParseAndStatement(t *testing.T) {
 		{
 			str: "and %r1, %r2, %r3",
 			stmt: &ast.AndStatement{
-				Token:       27,
+				Token:       token.AND,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -768,10 +768,10 @@ func TestParseAndStatement(t *testing.T) {
 		{
 			str: "and %r1, 32, %r3",
 			stmt: &ast.AndStatement{
-				Token:       27,
+				Token:       token.AND,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -809,7 +809,7 @@ func TestParseAndStatement(t *testing.T) {
 		},
 		{
 			str: "\nand %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -834,7 +834,7 @@ func TestParseAndCCStatement(t *testing.T) {
 		{
 			str: "andcc %r1, %r2, %r3",
 			stmt: &ast.AndCCStatement{
-				Token:       28,
+				Token:       token.ANDCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -844,10 +844,10 @@ func TestParseAndCCStatement(t *testing.T) {
 		{
 			str: "andcc %r1, 32, %r3",
 			stmt: &ast.AndCCStatement{
-				Token:       28,
+				Token:       token.ANDCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -885,7 +885,7 @@ func TestParseAndCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nandcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -910,7 +910,7 @@ func TestParseOrStatement(t *testing.T) {
 		{
 			str: "or %r1, %r2, %r3",
 			stmt: &ast.OrStatement{
-				Token:       29,
+				Token:       token.OR,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -920,10 +920,10 @@ func TestParseOrStatement(t *testing.T) {
 		{
 			str: "or %r1, 32, %r3",
 			stmt: &ast.OrStatement{
-				Token:       29,
+				Token:       token.OR,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(9), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(9), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -961,7 +961,7 @@ func TestParseOrStatement(t *testing.T) {
 		},
 		{
 			str: "\nor %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -986,7 +986,7 @@ func TestParseOrCCStatement(t *testing.T) {
 		{
 			str: "orcc %r1, %r2, %r3",
 			stmt: &ast.OrCCStatement{
-				Token:       30,
+				Token:       token.ORCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -996,10 +996,10 @@ func TestParseOrCCStatement(t *testing.T) {
 		{
 			str: "orcc %r1, 32, %r3",
 			stmt: &ast.OrCCStatement{
-				Token:       30,
+				Token:       token.ORCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(11), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(11), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1037,7 +1037,7 @@ func TestParseOrCCStatement(t *testing.T) {
 		},
 		{
 			str: "\norcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1062,7 +1062,7 @@ func TestParseOrnStatement(t *testing.T) {
 		{
 			str: "orn %r1, %r2, %r3",
 			stmt: &ast.OrnStatement{
-				Token:       31,
+				Token:       token.ORN,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1072,10 +1072,10 @@ func TestParseOrnStatement(t *testing.T) {
 		{
 			str: "orn %r1, 32, %r3",
 			stmt: &ast.OrnStatement{
-				Token:       31,
+				Token:       token.ORN,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1113,7 +1113,7 @@ func TestParseOrnStatement(t *testing.T) {
 		},
 		{
 			str: "\norn %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1138,7 +1138,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 		{
 			str: "orncc %r1, %r2, %r3",
 			stmt: &ast.OrnCCStatement{
-				Token:       32,
+				Token:       token.ORNCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1148,10 +1148,10 @@ func TestParseOrnCCStatement(t *testing.T) {
 		{
 			str: "orncc %r1, 32, %r3",
 			stmt: &ast.OrnCCStatement{
-				Token:       32,
+				Token:       token.ORNCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1189,7 +1189,7 @@ func TestParseOrnCCStatement(t *testing.T) {
 		},
 		{
 			str: "\norncc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1214,7 +1214,7 @@ func TestParseXorStatement(t *testing.T) {
 		{
 			str: "xor %r1, %r2, %r3",
 			stmt: &ast.XorStatement{
-				Token:       33,
+				Token:       token.XOR,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1224,10 +1224,10 @@ func TestParseXorStatement(t *testing.T) {
 		{
 			str: "xor %r1, 32, %r3",
 			stmt: &ast.XorStatement{
-				Token:       33,
+				Token:       token.XOR,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1265,7 +1265,7 @@ func TestParseXorStatement(t *testing.T) {
 		},
 		{
 			str: "\nxor %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1290,7 +1290,7 @@ func TestParseXorCCStatement(t *testing.T) {
 		{
 			str: "xorcc %r1, %r2, %r3",
 			stmt: &ast.XorCCStatement{
-				Token:       34,
+				Token:       token.XORCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1300,10 +1300,10 @@ func TestParseXorCCStatement(t *testing.T) {
 		{
 			str: "xorcc %r1, 32, %r3",
 			stmt: &ast.XorCCStatement{
-				Token:       34,
+				Token:       token.XORCC,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(12), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(12), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1341,7 +1341,7 @@ func TestParseXorCCStatement(t *testing.T) {
 		},
 		{
 			str: "\nxorcc %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1366,7 +1366,7 @@ func TestParseSLLStatement(t *testing.T) {
 		{
 			str: "sll %r1, %r2, %r3",
 			stmt: &ast.SLLStatement{
-				Token:       35,
+				Token:       token.SLL,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1376,10 +1376,10 @@ func TestParseSLLStatement(t *testing.T) {
 		{
 			str: "sll %r1, 32, %r3",
 			stmt: &ast.SLLStatement{
-				Token:       35,
+				Token:       token.SLL,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1417,7 +1417,7 @@ func TestParseSLLStatement(t *testing.T) {
 		},
 		{
 			str: "\nsll %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1442,7 +1442,7 @@ func TestParseSRAStatement(t *testing.T) {
 		{
 			str: "sra %r1, %r2, %r3",
 			stmt: &ast.SRAStatement{
-				Token:       36,
+				Token:       token.SRA,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
 				Operand:     &ast.Register{Name: "%r2"},
@@ -1452,10 +1452,10 @@ func TestParseSRAStatement(t *testing.T) {
 		{
 			str: "sra %r1, 32, %r3",
 			stmt: &ast.SRAStatement{
-				Token:       36,
+				Token:       token.SRA,
 				Position:    testPos,
 				Source:      &ast.Register{Name: "%r1"},
-				Operand:     &ast.Integer{Token: 10, Position: posAfter(10), Value: 32, Literal: "32"},
+				Operand:     &ast.Integer{Token: token.INT, Position: posAfter(10), Value: 32, Literal: "32"},
 				Destination: &ast.Register{Name: "%r3"},
 			},
 		},
@@ -1493,7 +1493,7 @@ func TestParseSRAStatement(t *testing.T) {
 		},
 		{
 			str: "\nsra %r1, %r2, %r3",
-			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra"`,
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
 		},
 	}
 
@@ -1508,6 +1508,286 @@ func TestParseSRAStatement(t *testing.T) {
 	}
 }
 
+// TestParseBEStatement validates the correct parsing of be commands.
+func TestParseBEStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "be x",
+			stmt: &ast.BEStatement{
+				Token:    token.BE,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(4), Name: "x"},
+			},
+		},
+		{
+			str: "be main",
+			stmt: &ast.BEStatement{
+				Token:    token.BE,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(4), Name: "main"},
+			},
+		},
+		{
+			str: "be %r1",
+			err: `1:4: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "be 123",
+			err: `1:4: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "be be",
+			err: `1:4: found KEYWORD "be", expected IDENTIFIER`,
+		},
+		{
+			str: "be main x",
+			err: `1:9: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\nbe x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if beStmt, valid := tt.stmt.(*ast.BEStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, beStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseBNEStatement validates the correct parsing of bne commands.
+func TestParseBNEStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "bne x",
+			stmt: &ast.BNEStatement{
+				Token:    token.BNE,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(5), Name: "x"},
+			},
+		},
+		{
+			str: "bne main",
+			stmt: &ast.BNEStatement{
+				Token:    token.BNE,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(5), Name: "main"},
+			},
+		},
+		{
+			str: "bne %r1",
+			err: `1:5: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "bne 123",
+			err: `1:5: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "bne bne",
+			err: `1:5: found KEYWORD "bne", expected IDENTIFIER`,
+		},
+		{
+			str: "bne main x",
+			err: `1:10: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\nbne x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if bneStmt, valid := tt.stmt.(*ast.BNEStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, bneStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseBNEGStatement validates the correct parsing of bneg commands.
+func TestParseBNEGStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "bneg x",
+			stmt: &ast.BNEGStatement{
+				Token:    token.BNEG,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "x"},
+			},
+		},
+		{
+			str: "bneg main",
+			stmt: &ast.BNEGStatement{
+				Token:    token.BNEG,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "main"},
+			},
+		},
+		{
+			str: "bneg %r1",
+			err: `1:6: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "bneg 123",
+			err: `1:6: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "bneg bneg",
+			err: `1:6: found KEYWORD "bneg", expected IDENTIFIER`,
+		},
+		{
+			str: "bneg main x",
+			err: `1:11: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\nbneg x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if bnegStmt, valid := tt.stmt.(*ast.BNEGStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, bnegStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseBPOSStatement validates the correct parsing of bpos commands.
+func TestParseBPOSStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "bpos x",
+			stmt: &ast.BPOSStatement{
+				Token:    token.BPOS,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "x"},
+			},
+		},
+		{
+			str: "bpos main",
+			stmt: &ast.BPOSStatement{
+				Token:    token.BPOS,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "main"},
+			},
+		},
+		{
+			str: "bpos %r1",
+			err: `1:6: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "bpos 123",
+			err: `1:6: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "bpos bpos",
+			err: `1:6: found KEYWORD "bpos", expected IDENTIFIER`,
+		},
+		{
+			str: "bpos main x",
+			err: `1:11: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\nbneg x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if bposStmt, valid := tt.stmt.(*ast.BPOSStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, bposStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseBAStatement validates the correct parsing of ba commands.
+func TestParseBAStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "ba x",
+			stmt: &ast.BAStatement{
+				Token:    token.BA,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(4), Name: "x"},
+			},
+		},
+		{
+			str: "ba main",
+			stmt: &ast.BAStatement{
+				Token:    token.BA,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(4), Name: "main"},
+			},
+		},
+		{
+			str: "ba %r1",
+			err: `1:4: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "ba 123",
+			err: `1:4: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "ba ba",
+			err: `1:4: found KEYWORD "ba", expected IDENTIFIER`,
+		},
+		{
+			str: "ba main x",
+			err: `1:9: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\nbe x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for tc, tt := range tests {
+		stmt, err := ParseStatement(tt.str)
+		if baStmt, valid := tt.stmt.(*ast.BAStatement); valid {
+			ok(t, tc, err)
+			equals(t, tc, baStmt, stmt)
+		} else {
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
 // TestParseIdent verifies the correct parsing of identifiers.
 func TestParseIdent(t *testing.T) {
 	tests := []struct {
@@ -1515,8 +1795,8 @@ func TestParseIdent(t *testing.T) {
 		obj *ast.Identifier
 		err string
 	}{
-		{str: "x", obj: &ast.Identifier{Token: 8, Position: testPos, Name: "x"}},
-		{str: "mylabel", obj: &ast.Identifier{Token: 8, Position: testPos, Name: "mylabel"}},
+		{str: "x", obj: &ast.Identifier{Token: token.IDENT, Position: testPos, Name: "x"}},
+		{str: "mylabel", obj: &ast.Identifier{Token: token.IDENT, Position: testPos, Name: "mylabel"}},
 		{str: ":x", err: `1:1: found ":", expected IDENTIFIER`},
 		{str: "123", err: `1:1: found INTEGER "123", expected IDENTIFIER`},
 	}
@@ -1561,11 +1841,11 @@ func TestParseInteger(t *testing.T) {
 		obj *ast.Integer
 		err string
 	}{
-		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
-		{str: "100", obj: &ast.Integer{Token: 10, Position: testPos, Value: 100, Literal: "100"}},
-		{str: "001", obj: &ast.Integer{Token: 10, Position: testPos, Value: 1, Literal: "001"}},
-		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
-		{str: "0x800", obj: &ast.Integer{Token: 10, Position: testPos, Value: 2048, Literal: "0x800"}},
+		{str: "0", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "100", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 100, Literal: "100"}},
+		{str: "001", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 1, Literal: "001"}},
+		{str: "0", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "0x800", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 2048, Literal: "0x800"}},
 		{str: "90000000000000", err: `1:1: INTEGER "90000000000000" out of 32 bit range`},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
 	}
@@ -1588,12 +1868,12 @@ func TestParseSIMM13(t *testing.T) {
 		obj *ast.Integer
 		err string
 	}{
-		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
-		{str: "100", obj: &ast.Integer{Token: 10, Position: testPos, Value: 100, Literal: "100"}},
-		{str: "001", obj: &ast.Integer{Token: 10, Position: testPos, Value: 1, Literal: "001"}},
-		{str: "0", obj: &ast.Integer{Token: 10, Position: testPos, Value: 0, Literal: "0"}},
-		{str: "8191", obj: &ast.Integer{Token: 10, Position: testPos, Value: 8191, Literal: "8191"}},
-		{str: "0x800", obj: &ast.Integer{Token: 10, Position: testPos, Value: 2048, Literal: "0x800"}},
+		{str: "0", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "100", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 100, Literal: "100"}},
+		{str: "001", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 1, Literal: "001"}},
+		{str: "0", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 0, Literal: "0"}},
+		{str: "8191", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 8191, Literal: "8191"}},
+		{str: "0x800", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 2048, Literal: "0x800"}},
 		{str: "8192", err: `1:1: INTEGER "8192" is not a valid SIMM13`},
 		{str: "-1", err: `1:1: found "-", expected INTEGER`},
 	}
@@ -1616,9 +1896,9 @@ func TestParseExpression(t *testing.T) {
 		obj *ast.Expression
 		err string
 	}{
-		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: 10, Position: posAfter(6), Value: 8191, Literal: "8191"}}},
-		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: 10, Position: posAfter(6), Value: 0, Literal: "0"}}},
-		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Token: 8, Position: posAfter(2), Name: "x"}, Operator: "", Offset: nil}},
+		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(6), Value: 8191, Literal: "8191"}}},
+		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(6), Value: 0, Literal: "0"}}},
+		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Token: token.IDENT, Position: posAfter(2), Name: "x"}, Operator: "", Offset: nil}},
 		{str: "x]", err: `1:1: found IDENTIFIER "x", expected "["`},
 		{str: "[+8191]", err: `1:2: found "+", expected IDENTIFIER, REGISTER`},
 		{str: "[0+8191]", err: `1:2: found INTEGER "0", expected IDENTIFIER, REGISTER`},
@@ -1647,7 +1927,7 @@ func TestParseOperand(t *testing.T) {
 		obj ast.Operand
 		err string
 	}{
-		{str: "64", obj: &ast.Integer{Token: 10, Position: testPos, Value: 64, Literal: "64"}},
+		{str: "64", obj: &ast.Integer{Token: token.INT, Position: testPos, Value: 64, Literal: "64"}},
 		{str: "%r1", obj: &ast.Register{Name: "%r1"}},
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER, REGISTER`},
 	}
@@ -1673,7 +1953,7 @@ func TestParseMemoryLocation(t *testing.T) {
 		{
 			str: "[x]", obj: &ast.Expression{
 				Position: testPos,
-				Base: &ast.Identifier{Token: 8,
+				Base: &ast.Identifier{Token: token.IDENT,
 					Position: token.Pos{Line: 1, Char: 2},
 					Name:     "x",
 				},

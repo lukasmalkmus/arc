@@ -57,6 +57,13 @@ func TestToken(t *testing.T) {
 		{"xorcc", XORCC, false, false, false, true, false},
 		{"sll", SLL, false, false, false, true, false},
 		{"sra", SRA, false, false, false, true, false},
+		{"be", BE, false, false, false, true, false},
+		{"bne", BNE, false, false, false, true, false},
+		{"bneg", BNEG, false, false, false, true, false},
+		{"bpos", BPOS, false, false, false, true, false},
+		{"ba", BA, false, false, false, true, false},
+		{"call", CALL, false, false, false, true, false},
+		{"jmpl", JMPL, false, false, false, true, false},
 
 		// Directives
 		{".begin", BEGIN, false, false, false, false, true},
@@ -114,6 +121,13 @@ func TestLookup(t *testing.T) {
 		{"xorcc", true, false},
 		{"sll", true, false},
 		{"sra", true, false},
+		{"be", true, false},
+		{"bne", true, false},
+		{"bneg", true, false},
+		{"bpos", true, false},
+		{"ba", true, false},
+		{"call", true, false},
+		{"jmpl", true, false},
 
 		// Directives
 		{".begin", false, true},

@@ -2,12 +2,22 @@ package internal
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
 // IsArcFile returns true if a file has the .arc file extension.
 func IsArcFile(filename string) bool {
 	return filepath.Ext(filename) == ".arc"
+}
+
+// IsDirectory returns true if the path is a directory.
+func IsDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), nil
 }
 
 // ReadCurDir has the same signature and functionality as ReadDir, but reads

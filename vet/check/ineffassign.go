@@ -89,6 +89,31 @@ func extractIdentLabel(stmt ast.Statement) ([]*ast.Identifier, []*ast.LabelState
 				idents = append(idents, ident)
 			}
 		}
+	case *ast.BEStatement:
+		ident := stmt.(*ast.BEStatement).Target
+		if !has(idents, ident) {
+			idents = append(idents, ident)
+		}
+	case *ast.BNEStatement:
+		ident := stmt.(*ast.BNEStatement).Target
+		if !has(idents, ident) {
+			idents = append(idents, ident)
+		}
+	case *ast.BNEGStatement:
+		ident := stmt.(*ast.BNEGStatement).Target
+		if !has(idents, ident) {
+			idents = append(idents, ident)
+		}
+	case *ast.BPOSStatement:
+		ident := stmt.(*ast.BPOSStatement).Target
+		if !has(idents, ident) {
+			idents = append(idents, ident)
+		}
+	case *ast.BAStatement:
+		ident := stmt.(*ast.BAStatement).Target
+		if !has(idents, ident) {
+			idents = append(idents, ident)
+		}
 	}
 
 	return idents, labels

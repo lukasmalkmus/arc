@@ -78,7 +78,7 @@ func NewFileParser(f *os.File) *Parser {
 // Parse parses a string into a Program AST object.
 func Parse(s string) (*ast.Program, error) { return New(strings.NewReader(s)).Parse() }
 
-// ParseFile parses the content of a file into a Program AST object. An error is
+// ParseFile parses the contents of a file into a Program AST object. An error is
 // returned if opening of the file or parsing fails.
 func ParseFile(filename string) (*ast.Program, error) {
 	// Read source file.
@@ -192,6 +192,16 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseSLLStatement()
 	case token.SRA:
 		return p.parseSRAStatement()
+	case token.BE:
+		return p.parseBEStatement()
+	case token.BNE:
+		return p.parseBNEStatement()
+	case token.BNEG:
+		return p.parseBNEGStatement()
+	case token.BPOS:
+		return p.parseBPOSStatement()
+	case token.BA:
+		return p.parseBAStatement()
 	}
 
 	// We expect a comment, an identifier, a directive or a keyword.
@@ -861,6 +871,106 @@ func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
 	return stmt, nil
 }
 
+// parseBEStatement parses an BEStatement AST object.
+func (p *Parser) parseBEStatement() (*ast.BEStatement, error) {
+	stmt := &ast.BEStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the branch statement.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Target = ident
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseBNEStatement parses an BNEStatement AST object.
+func (p *Parser) parseBNEStatement() (*ast.BNEStatement, error) {
+	stmt := &ast.BNEStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the branch statement.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Target = ident
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseBNEGStatement parses an BNEGStatement AST object.
+func (p *Parser) parseBNEGStatement() (*ast.BNEGStatement, error) {
+	stmt := &ast.BNEGStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the branch statement.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Target = ident
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseBPOSStatement parses an BPOSStatement AST object.
+func (p *Parser) parseBPOSStatement() (*ast.BPOSStatement, error) {
+	stmt := &ast.BPOSStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the branch statement.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Target = ident
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseBAStatement parses an BAStatement AST object.
+func (p *Parser) parseBAStatement() (*ast.BAStatement, error) {
+	stmt := &ast.BAStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the branch statement.
+	ident, err := p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Target = ident
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
 // parseIdent parses an identifier and creates an Identifier AST object.
 func (p *Parser) parseIdent() (*ast.Identifier, error) {
 	if p.next(); p.tok != token.IDENT {
@@ -1103,8 +1213,10 @@ func (e ParseError) Error() string {
 	act := ""
 	if tok := e.FoundTok; tok.IsSpecial() && tok != token.ILLEGAL {
 		act = tok.String()
-	} else if tok := e.FoundTok; tok.IsLiteral() || tok == token.ILLEGAL {
+	} else if tok.IsLiteral() || tok == token.ILLEGAL {
 		act = tok.String() + ` "` + e.FoundLit + `"`
+	} else if tok.IsKeyword() {
+		act = "KEYWORD" + ` "` + e.FoundLit + `"`
 	} else {
 		act = `"` + tok.String() + `"`
 	}

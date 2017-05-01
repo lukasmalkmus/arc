@@ -43,6 +43,11 @@ file in the current directory having the .arc file extension.`,
 		// Vet every file given.
 		if len(args) > 0 {
 			for _, file := range args {
+				// If an argument is a directory, ignore it.
+				if is, _ := internal.IsDirectory(file); is {
+					continue
+				}
+
 				res, err := vet.CheckFile(file, &vetOpts)
 				if err != nil {
 					printError(err)

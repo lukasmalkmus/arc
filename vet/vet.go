@@ -81,7 +81,7 @@ func Check(src io.Reader, options *Options) ([]string, error) {
 	}
 	errs.Add(err)
 
-	// Create new vet.
+	// Create new vet instance.
 	v, err := New(prog, options)
 	if err != nil {
 		errs.Add(err)
@@ -108,7 +108,7 @@ func CheckFile(filename string, options *Options) ([]string, error) {
 	}
 	errs.Add(err)
 
-	// Create new vet.
+	// Create new vet instance.
 	v, err := New(prog, options)
 	if err != nil {
 		errs.Add(err)

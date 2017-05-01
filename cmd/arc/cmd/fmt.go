@@ -23,6 +23,11 @@ extension.`,
 		// Format every file given.
 		if len(args) > 0 {
 			for _, file := range args {
+				// If an argument is a directory, ignore it.
+				if is, _ := internal.IsDirectory(file); is {
+					continue
+				}
+
 				if err := arcfmt.FormatFile(file); err != nil {
 					printError(err)
 				}

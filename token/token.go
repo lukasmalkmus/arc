@@ -55,6 +55,13 @@ const (
 	XORCC // xorcc
 	SLL   // sll (shift left logical)
 	SRA   // sra (shift right arithmetic)
+	BE    // be (branch on equal to zero)
+	BNE   // bne (branch on not equal)
+	BNEG  // bneg (branch on negative)
+	BPOS  // bpos (branch on positive)
+	BA    // ba (branch always)
+	CALL  // call (subroutine call)
+	JMPL  // jmpl (jump and link)
 	keywordEnd
 
 	// Directives
@@ -105,6 +112,13 @@ var tokens = [...]string{
 	XORCC: "xorcc",
 	SLL:   "sll",
 	SRA:   "sra",
+	BE:    "be",
+	BNE:   "bne",
+	BNEG:  "bneg",
+	BPOS:  "bpos",
+	BA:    "ba",
+	CALL:  "call",
+	JMPL:  "jmpl",
 
 	// Directives
 	BEGIN: ".begin",

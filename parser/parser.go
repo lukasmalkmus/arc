@@ -96,6 +96,13 @@ func ParseStatement(s string) (ast.Statement, error) {
 	return New(strings.NewReader(s)).ParseStatement()
 }
 
+// Feed will provide the parser with a new scanner source, which effectively
+// adds a new source of tokens. This preserves the previous parsing context
+// while parsing new data.
+func (p *Parser) Feed(s string) {
+	p.scanner = scanner.New(strings.NewReader(s))
+}
+
 // Parse parses the content of the underlying reader into a Program AST object.
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{Filename: p.pos}

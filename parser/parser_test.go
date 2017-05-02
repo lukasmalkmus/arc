@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -27,6 +28,18 @@ func TestParserBuffer(t *testing.T) {
 	equals(t, 0, tok, bufTok)
 	equals(t, 0, lit, bufLit)
 	equals(t, 0, pos, bufPos)
+}
+
+func TestFeed(t *testing.T) {
+	stmt1, stmt2 := "x: 25", "ld [x], %r2"
+	p := New(strings.NewReader(stmt1))
+	prog, err := p.Parse()
+	ok(t, 0, err)
+	equals(t, 0, 1, len(prog.Statements))
+	p.Feed(stmt2)
+	prog, err = p.Parse()
+	ok(t, 0, err)
+	equals(t, 0, 1, len(prog.Statements))
 }
 
 // TestParse will validate the correct parsing of a complete program.
@@ -99,6 +112,34 @@ func TestParse(t *testing.T) {
 
 	for tc, tt := range tests {
 		_, err := Parse(tt.prog)
+		if tt.err == "" {
+			ok(t, tc, err)
+		} else {
+			if err == nil {
+				t.Fatalf("Expected error but got nil!\n(test case %d)", tc)
+			}
+			equals(t, tc, tt.err, err.Error())
+		}
+	}
+}
+
+// TestParseFile will validate the correct parsing of a file containing a
+// complete program.
+func TestParseFile(t *testing.T) {
+	err := os.Chdir("../testdata")
+	if err != nil {
+		t.Error("could not switch to testdata directory")
+	}
+
+	tests := []struct {
+		file string
+		err  string
+	}{
+		{file: "valid.arc"},
+	}
+
+	for tc, tt := range tests {
+		_, err := ParseFile(tt.file)
 		if tt.err == "" {
 			ok(t, tc, err)
 		} else {

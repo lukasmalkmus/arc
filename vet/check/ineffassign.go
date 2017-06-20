@@ -67,8 +67,7 @@ func extractIdentLabel(stmt ast.Statement) ([]*ast.Identifier, []*ast.LabelState
 		labels = append(labels, label)
 		// Besides reading the label, we also need to examine the referenced
 		// statement.
-		ref, valid := label.Reference.(ast.Statement)
-		if valid {
+		if ref, valid := label.Reference.(ast.Statement); valid {
 			ids, lbs := extractIdentLabel(ref)
 			labels = append(labels, lbs...)
 			for _, ident := range ids {

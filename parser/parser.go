@@ -219,7 +219,7 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 	return nil, p.newParseError(exp...)
 }
 
-// parseCommentStatement parses an CommentStatement AST object.
+// parseCommentStatement parses a CommentStatement AST object.
 func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 	stmt := &ast.CommentStatement{Token: p.tok, Position: p.pos, Text: p.lit}
 
@@ -232,7 +232,7 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 	return stmt, nil
 }
 
-// parseBeginStatement parses an BeginStatement AST object.
+// parseBeginStatement parses a BeginStatement AST object.
 func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 	stmt := &ast.BeginStatement{Token: p.tok, Position: p.pos}
 
@@ -336,7 +336,7 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	return stmt, nil
 }
 
-// parseLoadStatement parses an LoadStatement AST object.
+// parseLoadStatement parses a LoadStatement AST object.
 func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	stmt := &ast.LoadStatement{Token: p.tok, Position: p.pos}
 
@@ -368,7 +368,7 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	return stmt, nil
 }
 
-// parseStoreStatement parses an StoreStatement AST object.
+// parseStoreStatement parses a StoreStatement AST object.
 func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	stmt := &ast.StoreStatement{Token: p.tok, Position: p.pos}
 
@@ -465,7 +465,7 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 	return stmt, nil
 }
 
-// parseSubStatement parses an SubStatement AST object.
+// parseSubStatement parses a SubStatement AST object.
 func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 	stmt := &ast.SubStatement{Token: p.tok, Position: p.pos}
 
@@ -509,7 +509,7 @@ func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 	return stmt, nil
 }
 
-// parseSubCCStatement parses an SubCCStatement AST object.
+// parseSubCCStatement parses a SubCCStatement AST object.
 func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
 	// Parse usual sub statement.
 	subStmt, err := p.parseSubStatement()
@@ -725,7 +725,7 @@ func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
 	return stmt, nil
 }
 
-// parseXorStatement parses an XorStatement AST object.
+// parseXorStatement parses a XorStatement AST object.
 func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
 	stmt := &ast.XorStatement{Token: p.tok, Position: p.pos}
 
@@ -769,7 +769,7 @@ func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
 	return stmt, nil
 }
 
-// parseXorCCStatement parses an XorCCStatement AST object.
+// parseXorCCStatement parses a XorCCStatement AST object.
 func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 	// Parse usual xor statement.
 	xorStmt, err := p.parseXorStatement()
@@ -790,7 +790,7 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 	return stmt, nil
 }
 
-// parseSLLStatement parses an SLLStatement AST object.
+// parseSLLStatement parses a SLLStatement AST object.
 func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
 	stmt := &ast.SLLStatement{Token: p.tok, Position: p.pos}
 
@@ -834,7 +834,7 @@ func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
 	return stmt, nil
 }
 
-// parseSRAStatement parses an SRAStatement AST object.
+// parseSRAStatement parses a SRAStatement AST object.
 func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
 	stmt := &ast.SRAStatement{Token: p.tok, Position: p.pos}
 
@@ -878,7 +878,7 @@ func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
 	return stmt, nil
 }
 
-// parseBEStatement parses an BEStatement AST object.
+// parseBEStatement parses a BEStatement AST object.
 func (p *Parser) parseBEStatement() (*ast.BEStatement, error) {
 	stmt := &ast.BEStatement{Token: p.tok, Position: p.pos}
 
@@ -898,7 +898,7 @@ func (p *Parser) parseBEStatement() (*ast.BEStatement, error) {
 	return stmt, nil
 }
 
-// parseBNEStatement parses an BNEStatement AST object.
+// parseBNEStatement parses a BNEStatement AST object.
 func (p *Parser) parseBNEStatement() (*ast.BNEStatement, error) {
 	stmt := &ast.BNEStatement{Token: p.tok, Position: p.pos}
 
@@ -918,7 +918,7 @@ func (p *Parser) parseBNEStatement() (*ast.BNEStatement, error) {
 	return stmt, nil
 }
 
-// parseBNEGStatement parses an BNEGStatement AST object.
+// parseBNEGStatement parses a BNEGStatement AST object.
 func (p *Parser) parseBNEGStatement() (*ast.BNEGStatement, error) {
 	stmt := &ast.BNEGStatement{Token: p.tok, Position: p.pos}
 
@@ -938,7 +938,7 @@ func (p *Parser) parseBNEGStatement() (*ast.BNEGStatement, error) {
 	return stmt, nil
 }
 
-// parseBPOSStatement parses an BPOSStatement AST object.
+// parseBPOSStatement parses a BPOSStatement AST object.
 func (p *Parser) parseBPOSStatement() (*ast.BPOSStatement, error) {
 	stmt := &ast.BPOSStatement{Token: p.tok, Position: p.pos}
 
@@ -1016,7 +1016,7 @@ func (p *Parser) parseInteger() (*ast.Integer, error) {
 	return &ast.Integer{Token: p.tok, Position: p.pos, Value: int32(i), Literal: p.lit}, nil
 }
 
-// parseSIMM13 parses an SIMM13 integer.
+// parseSIMM13 parses a SIMM13 integer.
 func (p *Parser) parseSIMM13() (*ast.Integer, error) {
 	if p.next(); p.tok != token.INT {
 		return nil, p.newParseError(token.INT)

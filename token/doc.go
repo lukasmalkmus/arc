@@ -1,5 +1,6 @@
 /*
-Package token implements lexical tokens for the ARC assembly language and token
-positions.
+Package token defines constants representing the lexical tokens of the ARC
+assembly language and basic operations on tokens (printing, predicates). It also
+implements token positions.
 */
 package token

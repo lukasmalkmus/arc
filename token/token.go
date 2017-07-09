@@ -1,5 +1,3 @@
-// Package token defines constants representing the lexical tokens of the ARC
-// assembly language and basic operations on tokens (printing, predicates).
 package token
 
 import "strings"
@@ -181,7 +179,8 @@ func Keywords() []Token {
 	return buf
 }
 
-// Lookup returns the token associated with a given string.
+// Lookup returns the token associated with a given string. It returns IDENT if
+// no keyword is found.
 func Lookup(ident string) Token {
 	if tok, ok := reservedWords[strings.ToLower(ident)]; ok {
 		return tok

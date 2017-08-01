@@ -1,4 +1,4 @@
-package token
+package token_test
 
 import (
 	"fmt"
@@ -6,12 +6,14 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/lukasmalkmus/arc/token"
 )
 
 func TestToken(t *testing.T) {
 	tests := []struct {
 		str    string
-		tok    Token
+		tok    token.Token
 		isSpec bool
 		isLit  bool
 		isOp   bool
@@ -19,56 +21,56 @@ func TestToken(t *testing.T) {
 		isDir  bool
 	}{
 		// Special tokens
-		{"ILLEGAL", ILLEGAL, true, false, false, false, false},
-		{"EOF", EOF, true, false, false, false, false},
-		{"WHITESPACE", WS, true, false, false, false, false},
-		{"NEWLINE", NL, true, false, false, false, false},
-		{"COMMENT", COMMENT, true, false, false, false, false},
+		{"ILLEGAL", token.ILLEGAL, true, false, false, false, false},
+		{"EOF", token.EOF, true, false, false, false, false},
+		{"WHITESPACE", token.WS, true, false, false, false, false},
+		{"NEWLINE", token.NL, true, false, false, false, false},
+		{"COMMENT", token.COMMENT, true, false, false, false, false},
 
 		// Identifiers and type literals
-		{"IDENTIFIER", IDENT, false, true, false, false, false},
-		{"REGISTER", REG, false, true, false, false, false},
-		{"INTEGER", INT, false, true, false, false, false},
+		{"IDENTIFIER", token.IDENT, false, true, false, false, false},
+		{"REGISTER", token.REG, false, true, false, false, false},
+		{"INTEGER", token.INT, false, true, false, false, false},
 
 		// Operators
-		{"+", PLUS, false, false, true, false, false},
-		{"-", MINUS, false, false, true, false, false},
+		{"+", token.PLUS, false, false, true, false, false},
+		{"-", token.MINUS, false, false, true, false, false},
 
 		// Misc characters
-		{"[", LBRACKET, false, false, false, false, false},
-		{"]", RBRACKET, false, false, false, false, false},
-		{",", COMMA, false, false, false, false, false},
-		{":", COLON, false, false, false, false, false},
+		{"[", token.LBRACKET, false, false, false, false, false},
+		{"]", token.RBRACKET, false, false, false, false, false},
+		{",", token.COMMA, false, false, false, false, false},
+		{":", token.COLON, false, false, false, false, false},
 
 		// Keywords
-		{"ld", LOAD, false, false, false, true, false},
-		{"st", STORE, false, false, false, true, false},
-		{"add", ADD, false, false, false, true, false},
-		{"addcc", ADDCC, false, false, false, true, false},
-		{"sub", SUB, false, false, false, true, false},
-		{"subcc", SUBCC, false, false, false, true, false},
-		{"and", AND, false, false, false, true, false},
-		{"andcc", ANDCC, false, false, false, true, false},
-		{"or", OR, false, false, false, true, false},
-		{"orcc", ORCC, false, false, false, true, false},
-		{"orn", ORN, false, false, false, true, false},
-		{"orncc", ORNCC, false, false, false, true, false},
-		{"xor", XOR, false, false, false, true, false},
-		{"xorcc", XORCC, false, false, false, true, false},
-		{"sll", SLL, false, false, false, true, false},
-		{"sra", SRA, false, false, false, true, false},
-		{"be", BE, false, false, false, true, false},
-		{"bne", BNE, false, false, false, true, false},
-		{"bneg", BNEG, false, false, false, true, false},
-		{"bpos", BPOS, false, false, false, true, false},
-		{"ba", BA, false, false, false, true, false},
-		{"call", CALL, false, false, false, true, false},
-		{"jmpl", JMPL, false, false, false, true, false},
+		{"ld", token.LOAD, false, false, false, true, false},
+		{"st", token.STORE, false, false, false, true, false},
+		{"add", token.ADD, false, false, false, true, false},
+		{"addcc", token.ADDCC, false, false, false, true, false},
+		{"sub", token.SUB, false, false, false, true, false},
+		{"subcc", token.SUBCC, false, false, false, true, false},
+		{"and", token.AND, false, false, false, true, false},
+		{"andcc", token.ANDCC, false, false, false, true, false},
+		{"or", token.OR, false, false, false, true, false},
+		{"orcc", token.ORCC, false, false, false, true, false},
+		{"orn", token.ORN, false, false, false, true, false},
+		{"orncc", token.ORNCC, false, false, false, true, false},
+		{"xor", token.XOR, false, false, false, true, false},
+		{"xorcc", token.XORCC, false, false, false, true, false},
+		{"sll", token.SLL, false, false, false, true, false},
+		{"sra", token.SRA, false, false, false, true, false},
+		{"be", token.BE, false, false, false, true, false},
+		{"bne", token.BNE, false, false, false, true, false},
+		{"bneg", token.BNEG, false, false, false, true, false},
+		{"bpos", token.BPOS, false, false, false, true, false},
+		{"ba", token.BA, false, false, false, true, false},
+		{"call", token.CALL, false, false, false, true, false},
+		{"jmpl", token.JMPL, false, false, false, true, false},
 
 		// Directives
-		{".begin", BEGIN, false, false, false, false, true},
-		{".end", END, false, false, false, false, true},
-		{".org", ORG, false, false, false, false, true},
+		{".begin", token.BEGIN, false, false, false, false, true},
+		{".end", token.END, false, false, false, false, true},
+		{".org", token.ORG, false, false, false, false, true},
 	}
 
 	for _, tt := range tests {
@@ -82,13 +84,13 @@ func TestToken(t *testing.T) {
 }
 
 func TestDirectives(t *testing.T) {
-	for _, tok := range Directives() {
+	for _, tok := range token.Directives() {
 		assert(t, tok.IsDirective(), "Returned token isn't a directive!", tok)
 	}
 }
 
 func TestKeywords(t *testing.T) {
-	for _, tok := range Keywords() {
+	for _, tok := range token.Keywords() {
 		assert(t, tok.IsKeyword(), "Returned token isn't a keyword!", tok)
 	}
 }
@@ -136,7 +138,7 @@ func TestLookup(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tok := Lookup(tt.str)
+		tok := token.Lookup(tt.str)
 		equals(t, tt.isKey, tok.IsKeyword())
 		equals(t, tt.isDir, tok.IsDirective())
 	}

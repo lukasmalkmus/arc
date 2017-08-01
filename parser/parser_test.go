@@ -16,13 +16,38 @@ import (
 
 var errExp = errors.New("Expecting error")
 var testPos = token.Pos{Line: 1, Char: 1}
+var validProg = `
+! main.arc
+! This is a valid ARC sample program.
+.begin
+.org 0x800
+main:   ld [x], %r1				! Load x.
+        ld [y], %r2				! Load y.
+        add %r1, %r2, %r3
+		subcc %r3, 2, %r4
+		sll %r4, 3, %r5
+        st %r5, [z]
+        ba exit					! Always branch to exit routine.
+exit:	ld [z], %r6				! jmpl %r15 + 4, %r6
+
+! Start data section at 0x1000.
+.org 0x1000
+x: 2
+y: 4
+z: 0
+.end
+
+`
 
 // TestParserBuffer tests if the correct token is returned after an unscan().
 func TestParserBuffer(t *testing.T) {
+	// Scan and save token, literal and token position.
 	test := `ld %r1, %r2`
 	p := New(strings.NewReader(test))
 	p.scan()
 	tok, lit, pos := p.tok, p.lit, p.pos
+
+	// Unscan and check buffer content.
 	p.unscan()
 	bufTok, bufLit, bufPos := p.buf.tok, p.buf.lit, p.buf.pos
 	equals(t, 0, tok, bufTok)
@@ -30,12 +55,18 @@ func TestParserBuffer(t *testing.T) {
 	equals(t, 0, pos, bufPos)
 }
 
+// TestFeed tests if the
 func TestFeed(t *testing.T) {
 	stmt1, stmt2 := "x: 25", "ld [x], %r2"
+
+	// Parse first statement.
 	p := New(strings.NewReader(stmt1))
 	prog, err := p.Parse()
 	ok(t, 0, err)
 	equals(t, 0, 1, len(prog.Statements))
+
+	// Parse next statement and check the error. Since "x" was already resolved
+	// the error should be nil.
 	p.Feed(stmt2)
 	prog, err = p.Parse()
 	ok(t, 0, err)
@@ -71,6 +102,9 @@ func TestParse(t *testing.T) {
 		st %r4, %r5
 
 		`,
+		},
+		{
+			prog: validProg,
 		},
 		{
 			prog: `.begin
@@ -136,6 +170,7 @@ func TestParseFile(t *testing.T) {
 		err  string
 	}{
 		{file: "valid.arc"},
+		{file: "notExisting.arc", err: "open notExisting.arc: no such file or directory"},
 	}
 
 	for tc, tt := range tests {
@@ -2040,6 +2075,14 @@ func TestExpectStatementEnd(t *testing.T) {
 		} else {
 			equals(t, i, tt.err, err.Error())
 		}
+	}
+}
+
+// BenchmarkParse benchmarks the overall parsing performance for a valid ARC
+// program.
+func BenchmarkParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Parse(validProg)
 	}
 }
 

@@ -78,8 +78,8 @@ func NewFileParser(f *os.File) *Parser {
 // Parse parses a string into a Program AST object.
 func Parse(s string) (*ast.Program, error) { return New(strings.NewReader(s)).Parse() }
 
-// ParseFile parses the contents of a file into a Program AST object. An error is
-// returned if opening of the file or parsing fails.
+// ParseFile parses the contents of a file into a Program AST object. An error
+// is returned if opening of the file or parsing fails.
 func ParseFile(filename string) (*ast.Program, error) {
 	// Read source file.
 	src, err := os.Open(filename)
@@ -224,9 +224,9 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 	stmt := &ast.CommentStatement{Token: p.tok, Position: p.pos, Text: p.lit}
 
 	// The comment should end after its literal value.
-	if err := p.expectStatementEndOrComment(); err != nil {
-		return nil, err
-	}
+	// if err := p.expectStatementEndOrComment(); err != nil {
+	// 	return nil, err
+	// }
 
 	// Return the successfully parsed statement.
 	return stmt, nil
@@ -1217,7 +1217,7 @@ func (e ParseError) Error() string {
 		return fmt.Sprintf("%s: %s", e.Pos, e.Message)
 	}
 
-	act := ""
+	var act string
 	if tok := e.FoundTok; tok.IsSpecial() && tok != token.ILLEGAL {
 		act = tok.String()
 	} else if tok.IsLiteral() || tok == token.ILLEGAL {

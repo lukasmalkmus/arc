@@ -328,8 +328,8 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 		return nil, err
 	}
 
-	// Declare label and remove its identifier from the list of
-	// unresolved identifiers.
+	// Declare label and remove its identifier from the list of unresolved
+	// identifiers.
 	p.declaredLabels[stmt.Ident.Name] = stmt
 	delete(p.unresolvedIdents, stmt.Ident.Name)
 

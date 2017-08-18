@@ -29,12 +29,13 @@ and will stop the interactive mode.`,
 
 		// Create new session.
 		session := interactive.New(">")
+
 		session.Before = func(c *interactive.Context) error {
 			c.Println("Welcome to the ARC REPL!")
 			return nil
 		}
-		session.Action = func(c *interactive.Context) error {
 
+		session.Action = func(c *interactive.Context) error {
 			// Scan user input.
 			text, err := c.Scan()
 			if err != nil {
@@ -44,7 +45,7 @@ and will stop the interactive mode.`,
 
 			// Check if the user wants to quit.
 			if s := strings.ToLower(text); s == "exit" || s == "quit" {
-				c.Close()
+				c.Close(0)
 			}
 
 			// Parse actual input. If evaluation fails print the error. Break
@@ -67,7 +68,7 @@ and will stop the interactive mode.`,
 			}
 
 			// Print statement if option is set and statement was parsed
-			// correctly..
+			// correctly.
 			if print {
 				c.Println(prog.Statements[0])
 				return nil
@@ -75,8 +76,9 @@ and will stop the interactive mode.`,
 
 			return nil
 		}
+
 		session.After = func(c *interactive.Context) error {
-			c.Println("See you!")
+			c.Println("See you next time!")
 			return nil
 		}
 

@@ -44,14 +44,12 @@ func (m MultiError) Return() error {
 
 // Sort sorts the underlying slice of errors.
 func (m *MultiError) Sort() {
-	strs := []string{}
-	errs := []error{}
-	for _, err := range m.errs {
-		strs = append(strs, err.Error())
+	strs := make([]string, len(m.errs))
+	for k, err := range m.errs {
+		strs[k] = err.Error()
 	}
 	sort.Strings(strs)
-	for _, err := range strs {
-		errs = append(errs, fmt.Errorf("%s", err))
+	for k, err := range strs {
+		m.errs[k] = fmt.Errorf("%s", err)
 	}
-	m.errs = errs
 }

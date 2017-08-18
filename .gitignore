@@ -1,3 +1,5 @@
+### Go ###
+
 # Binaries for programs and plugins
 *.exe
 *.dll
@@ -13,5 +15,6 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
-# External packages folder
+# External packages folders (including dep backups)
 vendor/
+_vendor-*/

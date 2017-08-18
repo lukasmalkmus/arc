@@ -1,4 +1,0 @@
-package: github.com/lukasmalkmus/arc
-import:
-- package: github.com/lukasmalkmus/interactive
-- package: github.com/spf13/cobra

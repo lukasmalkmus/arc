@@ -22,7 +22,9 @@ func TestPosition_String(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		equals(t, tt.str, tt.pos.String())
+		t.Run(tt.str, func(t *testing.T) {
+			equals(t, tt.str, tt.pos.String())
+		})
 	}
 }
 
@@ -42,6 +44,8 @@ func TestPosition_NoFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		equals(t, tt.str, tt.pos.NoFile())
+		t.Run(tt.str, func(t *testing.T) {
+			equals(t, tt.str, tt.pos.NoFile())
+		})
 	}
 }

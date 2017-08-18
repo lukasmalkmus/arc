@@ -22,7 +22,6 @@ func TestStatementName(t *testing.T) {
 		{stmt: &ast.LabelStatement{}, str: "LABEL"},
 		{stmt: &ast.LoadStatement{}, str: "LOAD"},
 		{stmt: &ast.StoreStatement{}, str: "STORE"},
-		{stmt: &ast.StoreStatement{}, str: "STORE"},
 		{stmt: &ast.AddStatement{}, str: "ADD"},
 		{stmt: &ast.AddCCStatement{}, str: "ADDCC"},
 		{stmt: &ast.SubStatement{}, str: "SUB"},
@@ -41,7 +40,9 @@ func TestStatementName(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		equals(t, tt.str, StatementName(tt.stmt))
+		t.Run(tt.str, func(t *testing.T) {
+			equals(t, tt.str, StatementName(tt.stmt))
+		})
 	}
 }
 

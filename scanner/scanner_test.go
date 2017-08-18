@@ -131,12 +131,14 @@ func TestScanner_Scan(t *testing.T) {
 		{".org", token.ORG, ".org", 1},
 	}
 
-	for tc, tt := range tests {
-		s := New(strings.NewReader(tt.str))
-		tok, lit, pos := s.Scan()
-		equals(t, tc, tt.tok, tok)
-		equals(t, tc, tt.lit, lit)
-		equals(t, tc, tt.line, pos.Line)
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			s := New(strings.NewReader(tt.str))
+			tok, lit, pos := s.Scan()
+			equals(t, tt.tok, tok)
+			equals(t, tt.lit, lit)
+			equals(t, tt.line, pos.Line)
+		})
 	}
 }
 
@@ -153,16 +155,16 @@ func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 func ok(tb testing.TB, err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: unexpected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
+		fmt.Printf("\033[31m%s:%d: unttected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
 		tb.FailNow()
 	}
 }
 
-// equals fails the test if exp is not equal to act.
-func equals(tb testing.TB, tc int, exp, act interface{}) {
-	if !reflect.DeepEqual(exp, act) {
+// equals fails the test if tt is not equal to act.
+func equals(tb testing.TB, tt, act interface{}) {
+	if !reflect.DeepEqual(tt, act) {
 		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\n\n\t(test case %d)\033[39m\n\n", filepath.Base(file), line, exp, act, tc+1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, tt, act)
 		tb.FailNow()
 	}
 }

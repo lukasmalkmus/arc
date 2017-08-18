@@ -74,12 +74,14 @@ func TestToken(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		equals(t, tt.tok.String(), tt.str)
-		equals(t, tt.tok.IsSpecial(), tt.isSpec)
-		equals(t, tt.tok.IsKeyword(), tt.isKey)
-		equals(t, tt.tok.IsLiteral(), tt.isLit)
-		equals(t, tt.tok.IsOperator(), tt.isOp)
-		equals(t, tt.tok.IsDirective(), tt.isDir)
+		t.Run(tt.str, func(t *testing.T) {
+			equals(t, tt.tok.String(), tt.str)
+			equals(t, tt.tok.IsSpecial(), tt.isSpec)
+			equals(t, tt.tok.IsKeyword(), tt.isKey)
+			equals(t, tt.tok.IsLiteral(), tt.isLit)
+			equals(t, tt.tok.IsOperator(), tt.isOp)
+			equals(t, tt.tok.IsDirective(), tt.isDir)
+		})
 	}
 }
 
@@ -138,9 +140,11 @@ func TestLookup(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tok := token.Lookup(tt.str)
-		equals(t, tt.isKey, tok.IsKeyword())
-		equals(t, tt.isDir, tok.IsDirective())
+		t.Run(tt.str, func(t *testing.T) {
+			tok := token.Lookup(tt.str)
+			equals(t, tt.isKey, tok.IsKeyword())
+			equals(t, tt.isDir, tok.IsDirective())
+		})
 	}
 }
 

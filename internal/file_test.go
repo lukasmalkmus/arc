@@ -18,7 +18,9 @@ func TestIsArcFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		equals(t, tt.isArcFile, IsArcFile(tt.filename))
+		t.Run("", func(t *testing.T) {
+			equals(t, tt.isArcFile, IsArcFile(tt.filename))
+		})
 	}
 }
 
@@ -40,12 +42,16 @@ func TestIsDirectory(t *testing.T) {
 		{"./sub/", true},
 		{"valid.arc", false},
 		{"./valid.arc", false},
+		{"sub/valid_too.arc", false},
+		{"./sub/valid_too.arc", false},
 	}
 
 	for _, tt := range tests {
-		is, err := IsDirectory(tt.filename)
-		ok(t, err)
-		equals(t, tt.isDir, is)
+		t.Run("", func(t *testing.T) {
+			is, err := IsDirectory(tt.filename)
+			ok(t, err)
+			equals(t, tt.isDir, is)
+		})
 	}
 }
 
@@ -60,12 +66,15 @@ func TestReadDir(t *testing.T) {
 		files  []string
 	}{
 		{".", []string{"valid.arc"}},
-		{"sub", []string{}},
+		{"sub", []string{"valid_too.arc"}},
+		{"empty_sub", []string{}},
 	}
 
 	for _, tt := range tests {
-		files, err := ReadDir(tt.folder)
-		ok(t, err)
-		equals(t, tt.files, files)
+		t.Run("", func(t *testing.T) {
+			files, err := ReadDir(tt.folder)
+			ok(t, err)
+			equals(t, tt.files, files)
+		})
 	}
 }

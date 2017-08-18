@@ -50,9 +50,9 @@ func TestParserBuffer(t *testing.T) {
 	// Unscan and check buffer content.
 	p.unscan()
 	bufTok, bufLit, bufPos := p.buf.tok, p.buf.lit, p.buf.pos
-	equals(t, 0, tok, bufTok)
-	equals(t, 0, lit, bufLit)
-	equals(t, 0, pos, bufPos)
+	equals(t, tok, bufTok)
+	equals(t, lit, bufLit)
+	equals(t, pos, bufPos)
 }
 
 // TestFeed tests if the
@@ -62,15 +62,15 @@ func TestFeed(t *testing.T) {
 	// Parse first statement.
 	p := New(strings.NewReader(stmt1))
 	prog, err := p.Parse()
-	ok(t, 0, err)
-	equals(t, 0, 1, len(prog.Statements))
+	ok(t, err)
+	equals(t, 1, len(prog.Statements))
 
 	// Parse next statement and check the error. Since "x" was already resolved
 	// the error should be nil.
 	p.Feed(stmt2)
 	prog, err = p.Parse()
-	ok(t, 0, err)
-	equals(t, 0, 1, len(prog.Statements))
+	ok(t, err)
+	equals(t, 1, len(prog.Statements))
 }
 
 // TestParse will validate the correct parsing of a complete program.
@@ -144,16 +144,18 @@ func TestParse(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		_, err := Parse(tt.prog)
-		if tt.err == "" {
-			ok(t, tc, err)
-		} else {
-			if err == nil {
-				t.Fatalf("Expected error but got nil!\n(test case %d)", tc)
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			_, err := Parse(tt.prog)
+			if tt.err == "" {
+				ok(t, err)
+			} else {
+				if err == nil {
+					t.Errorf("expected error but got nil")
+				}
+				equals(t, tt.err, err.Error())
 			}
-			equals(t, tc, tt.err, err.Error())
-		}
+		})
 	}
 }
 
@@ -173,16 +175,18 @@ func TestParseFile(t *testing.T) {
 		{file: "notExisting.arc", err: "open notExisting.arc: no such file or directory"},
 	}
 
-	for tc, tt := range tests {
-		_, err := ParseFile(tt.file)
-		if tt.err == "" {
-			ok(t, tc, err)
-		} else {
-			if err == nil {
-				t.Fatalf("Expected error but got nil!\n(test case %d)", tc)
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			_, err := ParseFile(tt.file)
+			if tt.err == "" {
+				ok(t, err)
+			} else {
+				if err == nil {
+					t.Fatalf("expected error but got nil")
+				}
+				equals(t, tt.err, err.Error())
 			}
-			equals(t, tc, tt.err, err.Error())
-		}
+		})
 	}
 }
 
@@ -197,14 +201,16 @@ func TestParseCommentStatement(t *testing.T) {
 		{str: "This is not a comment", err: `1:6: found IDENTIFIER "is", expected ":"`},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if commentStmt, valid := tt.stmt.(*ast.CommentStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, commentStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if commentStmt, valid := tt.stmt.(*ast.CommentStatement); valid {
+				ok(t, err)
+				equals(t, commentStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -221,14 +227,16 @@ func TestParseBeginStatement(t *testing.T) {
 		{str: ".begin 123", err: `1:8: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if beginStmt, valid := tt.stmt.(*ast.BeginStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, beginStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if beginStmt, valid := tt.stmt.(*ast.BeginStatement); valid {
+				ok(t, err)
+				equals(t, beginStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -245,14 +253,16 @@ func TestParseEndStatement(t *testing.T) {
 		{str: ".end 123", err: `1:6: found INTEGER "123", expected COMMENT, NEWLINE, EOF`},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if endStmt, valid := tt.stmt.(*ast.EndStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, endStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if endStmt, valid := tt.stmt.(*ast.EndStatement); valid {
+				ok(t, err)
+				equals(t, endStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -270,14 +280,16 @@ func TestParseOrgStatement(t *testing.T) {
 		{str: "org", err: `1:4: found EOF, expected ":"`},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if orgStmt, valid := tt.stmt.(*ast.OrgStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, orgStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if orgStmt, valid := tt.stmt.(*ast.OrgStatement); valid {
+				ok(t, err)
+				equals(t, orgStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -317,14 +329,16 @@ func TestParseLabelStatement(t *testing.T) {
 		{str: "X: 90000000000000", err: `1:4: INTEGER "90000000000000" out of 32 bit range`},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, labelStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
+				ok(t, err)
+				equals(t, labelStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -413,14 +427,16 @@ func TestParseLoadStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if loadStmt, valid := tt.stmt.(*ast.LoadStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, loadStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if loadStmt, valid := tt.stmt.(*ast.LoadStatement); valid {
+				ok(t, err)
+				equals(t, loadStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -509,14 +525,16 @@ func TestParseStoreStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if storeStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, storeStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if storeStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
+				ok(t, err)
+				equals(t, storeStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -585,14 +603,16 @@ func TestParseAddStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if addStmt, valid := tt.stmt.(*ast.AddStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, addStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if addStmt, valid := tt.stmt.(*ast.AddStatement); valid {
+				ok(t, err)
+				equals(t, addStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -661,14 +681,16 @@ func TestParseAddCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if addCCStmt, valid := tt.stmt.(*ast.AddCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, addCCStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if addCCStmt, valid := tt.stmt.(*ast.AddCCStatement); valid {
+				ok(t, err)
+				equals(t, addCCStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -737,14 +759,16 @@ func TestParseSubStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if subStmt, valid := tt.stmt.(*ast.SubStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, subStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if subStmt, valid := tt.stmt.(*ast.SubStatement); valid {
+				ok(t, err)
+				equals(t, subStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -813,14 +837,16 @@ func TestParseSubCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if subCCStmt, valid := tt.stmt.(*ast.SubCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, subCCStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if subCCStmt, valid := tt.stmt.(*ast.SubCCStatement); valid {
+				ok(t, err)
+				equals(t, subCCStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -889,14 +915,16 @@ func TestParseAndStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if andStmt, valid := tt.stmt.(*ast.AndStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, andStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if andStmt, valid := tt.stmt.(*ast.AndStatement); valid {
+				ok(t, err)
+				equals(t, andStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -965,14 +993,16 @@ func TestParseAndCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if andCCStmt, valid := tt.stmt.(*ast.AndCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, andCCStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if andCCStmt, valid := tt.stmt.(*ast.AndCCStatement); valid {
+				ok(t, err)
+				equals(t, andCCStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1041,14 +1071,16 @@ func TestParseOrStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if orStmt, valid := tt.stmt.(*ast.OrStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, orStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if orStmt, valid := tt.stmt.(*ast.OrStatement); valid {
+				ok(t, err)
+				equals(t, orStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1117,14 +1149,16 @@ func TestParseOrCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if orCCStmt, valid := tt.stmt.(*ast.OrCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, orCCStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if orCCStmt, valid := tt.stmt.(*ast.OrCCStatement); valid {
+				ok(t, err)
+				equals(t, orCCStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1193,14 +1227,16 @@ func TestParseOrnStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if ornStmt, valid := tt.stmt.(*ast.OrnStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, ornStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if ornStmt, valid := tt.stmt.(*ast.OrnStatement); valid {
+				ok(t, err)
+				equals(t, ornStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1269,14 +1305,16 @@ func TestParseOrnCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if ornCCStmt, valid := tt.stmt.(*ast.OrnCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, ornCCStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if ornCCStmt, valid := tt.stmt.(*ast.OrnCCStatement); valid {
+				ok(t, err)
+				equals(t, ornCCStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1345,14 +1383,16 @@ func TestParseXorStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if xorStmt, valid := tt.stmt.(*ast.XorStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, xorStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if xorStmt, valid := tt.stmt.(*ast.XorStatement); valid {
+				ok(t, err)
+				equals(t, xorStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1421,14 +1461,16 @@ func TestParseXorCCStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if xorccStmt, valid := tt.stmt.(*ast.XorCCStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, xorccStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if xorccStmt, valid := tt.stmt.(*ast.XorCCStatement); valid {
+				ok(t, err)
+				equals(t, xorccStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1497,14 +1539,16 @@ func TestParseSLLStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if sllStmt, valid := tt.stmt.(*ast.SLLStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, sllStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if sllStmt, valid := tt.stmt.(*ast.SLLStatement); valid {
+				ok(t, err)
+				equals(t, sllStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1573,14 +1617,16 @@ func TestParseSRAStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if sllStmt, valid := tt.stmt.(*ast.SRAStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, sllStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if sllStmt, valid := tt.stmt.(*ast.SRAStatement); valid {
+				ok(t, err)
+				equals(t, sllStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1629,14 +1675,16 @@ func TestParseBEStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if beStmt, valid := tt.stmt.(*ast.BEStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, beStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if beStmt, valid := tt.stmt.(*ast.BEStatement); valid {
+				ok(t, err)
+				equals(t, beStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1685,14 +1733,16 @@ func TestParseBNEStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if bneStmt, valid := tt.stmt.(*ast.BNEStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, bneStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if bneStmt, valid := tt.stmt.(*ast.BNEStatement); valid {
+				ok(t, err)
+				equals(t, bneStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1741,14 +1791,16 @@ func TestParseBNEGStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if bnegStmt, valid := tt.stmt.(*ast.BNEGStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, bnegStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if bnegStmt, valid := tt.stmt.(*ast.BNEGStatement); valid {
+				ok(t, err)
+				equals(t, bnegStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1797,14 +1849,16 @@ func TestParseBPOSStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if bposStmt, valid := tt.stmt.(*ast.BPOSStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, bposStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if bposStmt, valid := tt.stmt.(*ast.BPOSStatement); valid {
+				ok(t, err)
+				equals(t, bposStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1853,14 +1907,16 @@ func TestParseBAStatement(t *testing.T) {
 		},
 	}
 
-	for tc, tt := range tests {
-		stmt, err := ParseStatement(tt.str)
-		if baStmt, valid := tt.stmt.(*ast.BAStatement); valid {
-			ok(t, tc, err)
-			equals(t, tc, baStmt, stmt)
-		} else {
-			equals(t, tc, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if baStmt, valid := tt.stmt.(*ast.BAStatement); valid {
+				ok(t, err)
+				equals(t, baStmt, stmt)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1877,14 +1933,16 @@ func TestParseIdent(t *testing.T) {
 		{str: "123", err: `1:1: found INTEGER "123", expected IDENTIFIER`},
 	}
 
-	for i, tt := range tests {
-		ident, err := New(strings.NewReader(tt.str)).parseIdent()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, ident)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			ident, err := New(strings.NewReader(tt.str)).parseIdent()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, ident)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1899,14 +1957,16 @@ func TestParseRegister(t *testing.T) {
 		{str: "r1", err: `1:1: found IDENTIFIER "r1", expected REGISTER`},
 	}
 
-	for i, tt := range tests {
-		ident, err := New(strings.NewReader(tt.str)).parseRegister()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, ident)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			ident, err := New(strings.NewReader(tt.str)).parseRegister()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, ident)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1926,14 +1986,16 @@ func TestParseInteger(t *testing.T) {
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER`},
 	}
 
-	for i, tt := range tests {
-		integer, err := New(strings.NewReader(tt.str)).parseInteger()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, integer)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			integer, err := New(strings.NewReader(tt.str)).parseInteger()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, integer)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1954,14 +2016,16 @@ func TestParseSIMM13(t *testing.T) {
 		{str: "-1", err: `1:1: found "-", expected INTEGER`},
 	}
 
-	for i, tt := range tests {
-		integer, err := New(strings.NewReader(tt.str)).parseSIMM13()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, integer)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			integer, err := New(strings.NewReader(tt.str)).parseSIMM13()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, integer)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -1984,15 +2048,17 @@ func TestParseExpression(t *testing.T) {
 		{str: "[%r1+45", err: `1:8: found EOF, expected "]"`},
 	}
 
-	for i, tt := range tests {
-		exp, err := New(strings.NewReader(tt.str)).parseExpression()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, exp)
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			exp, err := New(strings.NewReader(tt.str)).parseExpression()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, exp)
 
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -2008,14 +2074,16 @@ func TestParseOperand(t *testing.T) {
 		{str: "x", err: `1:1: found IDENTIFIER "x", expected INTEGER, REGISTER`},
 	}
 
-	for i, tt := range tests {
-		loc, err := New(strings.NewReader(tt.str)).parseOperand()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, loc)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			loc, err := New(strings.NewReader(tt.str)).parseOperand()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, loc)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -2041,14 +2109,16 @@ func TestParseMemoryLocation(t *testing.T) {
 		{str: "[x+]", err: `1:4: found "]", expected INTEGER`},
 	}
 
-	for i, tt := range tests {
-		loc, err := New(strings.NewReader(tt.str)).parseMemoryLocation()
-		if err == nil {
-			ok(t, i, err)
-			equals(t, i, tt.obj, loc)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			loc, err := New(strings.NewReader(tt.str)).parseMemoryLocation()
+			if err == nil {
+				ok(t, err)
+				equals(t, tt.obj, loc)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -2068,13 +2138,15 @@ func TestExpectStatementEnd(t *testing.T) {
 		{str: ";", err: `1:1: found ILLEGAL ";", expected NEWLINE, EOF`},
 	}
 
-	for i, tt := range tests {
-		err := New(strings.NewReader(tt.str)).expectStatementEnd()
-		if err == nil {
-			ok(t, i, err)
-		} else {
-			equals(t, i, tt.err, err.Error())
-		}
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			err := New(strings.NewReader(tt.str)).expectStatementEnd()
+			if err == nil {
+				ok(t, err)
+			} else {
+				equals(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -2100,19 +2172,19 @@ func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 }
 
 // ok fails the test if an err is not nil.
-func ok(tb testing.TB, tc int, err error) {
+func ok(tb testing.TB, err error) {
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: unexpected error in test case %d: %s\033[39m\n\n", filepath.Base(file), line, tc+1, err.Error())
+		fmt.Printf("\033[31m%s:%d: unttected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
 		tb.FailNow()
 	}
 }
 
-// equals fails the test if exp is not equal to act.
-func equals(tb testing.TB, tc int, exp, act interface{}) {
-	if !reflect.DeepEqual(exp, act) {
+// equals fails the test if tt is not equal to act.
+func equals(tb testing.TB, tt, act interface{}) {
+	if !reflect.DeepEqual(tt, act) {
 		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\n\n\t(test case %d)\033[39m\n\n", filepath.Base(file), line, exp, act, tc+1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, tt, act)
 		tb.FailNow()
 	}
 }

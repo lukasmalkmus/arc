@@ -91,6 +91,6 @@ and will stop the interactive mode.`,
 func init() {
 	RootCmd.AddCommand(replCmd)
 
-	replCmd.Flags().BoolVarP(&confirm, "confirm", "c", false, "Print a confirmation if the statement was evaluated correctly")
-	replCmd.Flags().BoolVarP(&print, "print", "p", false, "Print the evaluated statement")
+	replCmd.Flags().BoolVarP(&confirm, "confirm", "c", false, "print a confirmation if the statement was evaluated correctly")
+	replCmd.Flags().BoolVarP(&print, "print", "p", false, "print the evaluated statement")
 }

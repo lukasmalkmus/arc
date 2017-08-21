@@ -91,7 +91,7 @@ func printError(err error) {
 func init() {
 	RootCmd.AddCommand(vetCmd)
 
-	vetCmd.Flags().BoolVarP(&list, "list", "l", false, "List available checks")
-	vetCmd.Flags().BoolVarP(&vetOpts.Sort, "sort", "s", false, "Sort results according to the source code position they apply to")
-	vetCmd.Flags().StringSliceVar(&vetOpts.Checks, "enable", []string{}, "Enable a specific check")
+	vetCmd.Flags().BoolVarP(&list, "list", "l", false, "list available checks")
+	vetCmd.Flags().BoolVarP(&vetOpts.Sort, "sort", "s", false, "sort results according to the source code position they apply to")
+	vetCmd.Flags().StringSliceVar(&vetOpts.Checks, "enable", []string{}, "enable a specific check")
 }

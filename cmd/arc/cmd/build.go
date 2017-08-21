@@ -24,8 +24,6 @@ ARC source file. Passing no argument will assemble every
 single file having the .arc file extension in the current
 directory.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("WIP! NOT WOKRING YET!")
-
 		// Assemble every file given.
 		if len(args) > 0 {
 			for _, file := range args {
@@ -59,5 +57,5 @@ directory.`,
 func init() {
 	RootCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().BoolVarP(&buildOpts.Verbose, "verbose", "v", false, "Log more build details")
+	buildCmd.Flags().BoolVarP(&buildOpts.Verbose, "verbose", "v", false, "print more build details")
 }

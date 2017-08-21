@@ -35,17 +35,24 @@ features that make working with ARC source code a breeze.
 The easiest way to run the *arc* tool is by grabbing the latest binary from
 the [release page][release].
 
+##### Using go get
+If go is installed on your system, installing arc can be accomplished by
+utilizing `go get`:
+```bash
+go get -u -d github.com/lukasmalkmus/arc/cmd/...
+```
+
 ##### Building from source
-This project uses [glide](http://glide.sh) for vendoring.
+This project uses [dep](https://github.com/golang/dep) for vendoring.
 ```bash
 git clone https://github.com/lukasmalkmus/arc
 cd arc
-glide install
-go build cmd/arc/main.go
+dep ensure
+go install ./... # or make
 ```
 
 #### Usage
-Just run `arc` in your terminal to get some helpful usage advice.
+Just run `arc` in your terminal to get some helpful advice.
 
 ```bash
 arc --help
@@ -57,7 +64,7 @@ Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 ### License
 © Lukas Malkmus, 2017
 
-Distributed under Apache License (`Apache License, Version 2.0`).
+Distributed under MIT License (`The MIT License`).
 
 See [LICENSE](LICENSE) for more information.
 
@@ -72,5 +79,5 @@ See [LICENSE](LICENSE) for more information.
 [docs_badge]: https://godoc.org/github.com/lukasmalkmus/arc?status.svg
 [release]: https://github.com/lukasmalkmus/arc/releases
 [release_badge]: https://img.shields.io/github/release/lukasmalkmus/arc.svg
-[license]: https://opensource.org/licenses/Apache-2.0
-[license_badge]: https://img.shields.io/badge/license-Apache-blue.svg
+[license]: https://opensource.org/licenses/MIT
+[license_badge]: https://img.shields.io/badge/license-MIT-blue.svg

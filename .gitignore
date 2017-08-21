@@ -17,5 +17,5 @@ vendor/
 _vendor-*/
 
 # Promu folders
-_build
-_tarballs
+.build
+.tarballs

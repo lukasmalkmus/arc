@@ -21,12 +21,18 @@ func TestScanner_Scan(t *testing.T) {
 		// Special tokens
 		{"#", token.ILLEGAL, "#", 1},
 		{"_", token.ILLEGAL, "_", 1},
-		{"_123", token.ILLEGAL, "_", 1},
+		{"_x", token.ILLEGAL, "_", 1},      // Underscore can't prefix identifier
+		{"_123", token.ILLEGAL, "_", 1},    // Underscore can't prefix integer
+		{"foo_", token.ILLEGAL, "foo_", 1}, // Underscore can't suffix identifier
 		{".", token.ILLEGAL, ".", 1},
-		{".123", token.ILLEGAL, ".", 1},
-		{"%", token.ILLEGAL, "%", 1},   // No ident after register char
-		{"%%", token.ILLEGAL, "%", 1},  // No ident after register char
-		{"%2", token.ILLEGAL, "%2", 1}, // First ident char is not a letter
+		{".x", token.ILLEGAL, ".x", 1},       // Dot can't prefix identifier, reserved for directive
+		{".123", token.ILLEGAL, ".", 1},      // Dot can't prefix integer/integer can't suffix dot (reserved for directive)
+		{"123x", token.ILLEGAL, "123x", 1},   // Illegal integer (wrong hex representation)
+		{"08", token.ILLEGAL, "08", 1},       // Octal out of range
+		{"0xx08", token.ILLEGAL, "0xx08", 1}, // Illegal hex syntax
+		{"%", token.ILLEGAL, "%", 1},         // No ident after register char
+		{"%%", token.ILLEGAL, "%", 1},        // No ident after register char
+		{"%2", token.ILLEGAL, "%2", 1},       // First ident char is not a letter
 		{"", token.EOF, "", 1},
 		{" ", token.WS, " ", 1},
 		{"   ", token.WS, "   ", 1},
@@ -44,24 +50,23 @@ func TestScanner_Scan(t *testing.T) {
 		// Identifiers
 		{"x", token.IDENT, "x", 1},
 		{"foo ", token.IDENT, "foo", 1},
-		{"x9", token.IDENT, "x9", 1},
+		{"foo_bar", token.IDENT, "foo_bar", 1},
 		{"r1", token.IDENT, "r1", 1},
 		{"r10", token.IDENT, "r10", 1},
 		{"r31", token.IDENT, "r31", 1},
 		{"%r1", token.REG, "%r1", 1},
 		{"%r10", token.REG, "%r10", 1},
 		{"%r31", token.REG, "%r31", 1},
+
+		// Integers
 		{"4", token.INT, "4", 1},
 		{"8", token.INT, "8", 1},
 		{"12", token.INT, "12", 1},
 		{"16", token.INT, "16", 1},
 		{"128", token.INT, "128", 1},
-		{"07", token.INT, "07", 1},
-		{"0x08", token.INT, "0x08", 1},
-		{"0X08", token.INT, "0x08", 1}, // X will get transformed to lower case.
-		{"123x", token.ILLEGAL, "123x", 1},
-		{"08", token.ILLEGAL, "08", 1},       // Octal out of range.
-		{"0xx08", token.ILLEGAL, "0xx08", 1}, // Illegal syntax.
+		{"07", token.INT, "07", 1},     // Octal
+		{"0x08", token.INT, "0x08", 1}, // Hex
+		{"0X08", token.INT, "0x08", 1}, // X will get transformed to lower case
 
 		// Operators
 		{"+", token.PLUS, "+", 1},
@@ -135,9 +140,15 @@ func TestScanner_Scan(t *testing.T) {
 		t.Run(tt.str, func(t *testing.T) {
 			s := New(strings.NewReader(tt.str))
 			tok, lit, pos := s.Scan()
-			equals(t, tt.tok, tok)
-			equals(t, tt.lit, lit)
-			equals(t, tt.line, pos.Line)
+			t.Run("tok", func(t *testing.T) {
+				equals(t, tt.tok.String(), tok.String())
+			})
+			t.Run("lit", func(t *testing.T) {
+				equals(t, tt.lit, lit)
+			})
+			t.Run("pos", func(t *testing.T) {
+				equals(t, tt.line, pos.Line)
+			})
 		})
 	}
 }

@@ -164,12 +164,17 @@ func (s *Scanner) scanIdent() (token.Token, string, token.Pos) {
 	for {
 		if ch, _ := s.read(); ch == eof {
 			break
-		} else if !isLetter(ch) && !isNumber(ch) {
+		} else if !isLetter(ch) && !isNumber(ch) && ch != '_' {
 			s.unread()
 			break
 		} else {
 			buf.WriteRune(ch)
 		}
+	}
+
+	// Make sure the last character is not an underscore, which is illegal.
+	if ch := buf.Bytes()[buf.Len()-1]; ch == '_' {
+		return token.ILLEGAL, buf.String(), pos
 	}
 
 	// Check if the identifier is a keyword.
@@ -205,7 +210,7 @@ func (s *Scanner) scanInteger() (token.Token, string, token.Pos) {
 		}
 	}
 
-	// Is the Syntax valid?
+	// Check if literal can be parsed to valid integer.
 	if _, err := strconv.ParseInt(buf.String(), 0, 64); err != nil {
 		return token.ILLEGAL, buf.String(), pos
 	}

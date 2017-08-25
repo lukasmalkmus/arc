@@ -75,12 +75,24 @@ func TestToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
-			equals(t, tt.tok.String(), tt.str)
-			equals(t, tt.tok.IsSpecial(), tt.isSpec)
-			equals(t, tt.tok.IsKeyword(), tt.isKey)
-			equals(t, tt.tok.IsLiteral(), tt.isLit)
-			equals(t, tt.tok.IsOperator(), tt.isOp)
-			equals(t, tt.tok.IsDirective(), tt.isDir)
+			t.Run("tokstr", func(t *testing.T) {
+				equals(t, tt.tok.String(), tt.str)
+			})
+			t.Run("spec", func(t *testing.T) {
+				equals(t, tt.tok.IsSpecial(), tt.isSpec)
+			})
+			t.Run("key", func(t *testing.T) {
+				equals(t, tt.tok.IsKeyword(), tt.isKey)
+			})
+			t.Run("lit", func(t *testing.T) {
+				equals(t, tt.tok.IsLiteral(), tt.isLit)
+			})
+			t.Run("op", func(t *testing.T) {
+				equals(t, tt.tok.IsOperator(), tt.isOp)
+			})
+			t.Run("dir", func(t *testing.T) {
+				equals(t, tt.tok.IsDirective(), tt.isDir)
+			})
 		})
 	}
 }
@@ -97,6 +109,8 @@ func TestKeywords(t *testing.T) {
 	}
 }
 
+// TestLookup makes sure that Lookup returns either the right keyword or IDENT
+// for non keywords, like directives or identifiers.
 func TestLookup(t *testing.T) {
 	tests := []struct {
 		str   string
@@ -142,8 +156,12 @@ func TestLookup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			tok := token.Lookup(tt.str)
-			equals(t, tt.isKey, tok.IsKeyword())
-			equals(t, tt.isDir, tok.IsDirective())
+			t.Run("key", func(t *testing.T) {
+				equals(t, tt.isKey, tok.IsKeyword())
+			})
+			t.Run("dir", func(t *testing.T) {
+				equals(t, tt.isDir, tok.IsDirective())
+			})
 		})
 	}
 }

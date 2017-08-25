@@ -16,7 +16,8 @@ import (
 
 var errExp = errors.New("Expecting error")
 var testPos = token.Pos{Line: 1, Char: 1}
-var validProg = `
+var (
+	validProg = `
 ! main.arc
 ! This is a valid ARC sample program.
 .begin
@@ -39,6 +40,56 @@ z: 0
 
 `
 
+	arraySum = `
+! ------------------------------------------------------- !
+! This program sums the elements from array that is       !
+! located starting with 3000.                             !
+! ------------------------------------------------------- !
+! Used registers                                          !
+! ==============                                          !
+! r1: length                                              !
+! r2: start (3000)                                        !
+! r3: sum of the elements (is initialized with zero)      !
+! r4: the current element                                 !
+! ==============                                          !
+! r1, r2 and r4 are set back to 0 after the loop is done  !
+! ------------------------------------------------------- !
+
+        .begin
+        .org 2048
+        call init_r
+        call loop
+
+init_r: ld [length], %r1
+        ld [start], %r2
+        ld [zero], %r3
+        jmpl %r15+4, %r0
+
+loop:   ld %r2, %r4
+        addcc %r2, 4, %r2
+        addcc %r3, %r4, %r3
+        addcc %r1, -1, %r1
+        be done
+        ba loop
+
+done:   ld [zero], %r1
+        ld [zero], %r2
+        ld [zero], %r4
+        jmpl %r15+4, %r0
+
+start:  3000
+length: 4
+zero:   0
+
+        .org 3000
+        10
+        20
+        -0xa
+        aH
+        .end
+`
+)
+
 // TestParserBuffer tests if the correct token is returned after an unscan().
 func TestParserBuffer(t *testing.T) {
 	// Scan and save token, literal and token position.
@@ -55,7 +106,8 @@ func TestParserBuffer(t *testing.T) {
 	equals(t, pos, bufPos)
 }
 
-// TestFeed tests if the
+// TestFeed tests if the parser is feed with the new data on top of the
+// previously parsed data.
 func TestFeed(t *testing.T) {
 	stmt1, stmt2 := "x: 25", "ld [x], %r2"
 
@@ -105,6 +157,10 @@ func TestParse(t *testing.T) {
 		},
 		{
 			prog: validProg,
+			// err:  `stuff`,
+		},
+		{
+			prog: arraySum,
 		},
 		{
 			prog: `.begin
@@ -150,9 +206,10 @@ func TestParse(t *testing.T) {
 			if tt.err == "" {
 				ok(t, err)
 			} else {
-				if err == nil {
-					t.Errorf("expected error but got nil")
-				}
+				// if err == nil {
+				// 	t.Fatalf("expected error but got nil")
+				// }
+				assert(t, err != nil, "expected error but got nil")
 				equals(t, tt.err, err.Error())
 			}
 		})
@@ -190,8 +247,8 @@ func TestParseFile(t *testing.T) {
 	}
 }
 
-// TestParseCommentStatement validates the correct parsing of the begin directive.
-func TestParseCommentStatement(t *testing.T) {
+// TestParser_ParseCommentStatement validates the correct parsing of the begin directive.
+func TestParser_ParseCommentStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -214,8 +271,8 @@ func TestParseCommentStatement(t *testing.T) {
 	}
 }
 
-// TestParseBeginStatement validates the correct parsing of the begin directive.
-func TestParseBeginStatement(t *testing.T) {
+// TestParser_ParseBeginStatement validates the correct parsing of the begin directive.
+func TestParser_ParseBeginStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -240,8 +297,8 @@ func TestParseBeginStatement(t *testing.T) {
 	}
 }
 
-// TestParseEndStatement validates the correct parsing of the end directive.
-func TestParseEndStatement(t *testing.T) {
+// TestParser_ParseEndStatement validates the correct parsing of the end directive.
+func TestParser_ParseEndStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -266,8 +323,8 @@ func TestParseEndStatement(t *testing.T) {
 	}
 }
 
-// TestParseOrgStatement validates the correct parsing of the org directive.
-func TestParseOrgStatement(t *testing.T) {
+// TestParser_ParseOrgStatement validates the correct parsing of the org directive.
+func TestParser_ParseOrgStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -293,8 +350,8 @@ func TestParseOrgStatement(t *testing.T) {
 	}
 }
 
-// TestParseLabelStatement validates the correct parsing of st commands.
-func TestParseLabelStatement(t *testing.T) {
+// TestParser_ParseLabelStatement validates the correct parsing of st commands.
+func TestParser_ParseLabelStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -342,8 +399,8 @@ func TestParseLabelStatement(t *testing.T) {
 	}
 }
 
-// TestParseLoadStatement validates the correct parsing of load commands.
-func TestParseLoadStatement(t *testing.T) {
+// TestParser_ParseLoadStatement validates the correct parsing of load commands.
+func TestParser_ParseLoadStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -440,8 +497,8 @@ func TestParseLoadStatement(t *testing.T) {
 	}
 }
 
-// TestParseStoreStatement validates the correct parsing of store commands.
-func TestParseStoreStatement(t *testing.T) {
+// TestParser_ParseStoreStatement validates the correct parsing of store commands.
+func TestParser_ParseStoreStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -538,8 +595,8 @@ func TestParseStoreStatement(t *testing.T) {
 	}
 }
 
-// TestParseAddStatement validates the correct parsing of add commands.
-func TestParseAddStatement(t *testing.T) {
+// TestParser_ParseAddStatement validates the correct parsing of add commands.
+func TestParser_ParseAddStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -616,8 +673,8 @@ func TestParseAddStatement(t *testing.T) {
 	}
 }
 
-// TestParseAddCCStatement validates the correct parsing of addcc commands.
-func TestParseAddCCStatement(t *testing.T) {
+// TestParser_ParseAddCCStatement validates the correct parsing of addcc commands.
+func TestParser_ParseAddCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -694,8 +751,8 @@ func TestParseAddCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseSubStatement validates the correct parsing of sub commands.
-func TestParseSubStatement(t *testing.T) {
+// TestParser_ParseSubStatement validates the correct parsing of sub commands.
+func TestParser_ParseSubStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -772,8 +829,8 @@ func TestParseSubStatement(t *testing.T) {
 	}
 }
 
-// TestParseSubCCStatement validates the correct parsing of subcc commands.
-func TestParseSubCCStatement(t *testing.T) {
+// TestParser_ParseSubCCStatement validates the correct parsing of subcc commands.
+func TestParser_ParseSubCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -850,8 +907,8 @@ func TestParseSubCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseAndStatement validates the correct parsing of and commands.
-func TestParseAndStatement(t *testing.T) {
+// TestParser_ParseAndStatement validates the correct parsing of and commands.
+func TestParser_ParseAndStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -928,8 +985,8 @@ func TestParseAndStatement(t *testing.T) {
 	}
 }
 
-// TestParseAndCCStatement validates the correct parsing of andcc commands.
-func TestParseAndCCStatement(t *testing.T) {
+// TestParser_ParseAndCCStatement validates the correct parsing of andcc commands.
+func TestParser_ParseAndCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1006,8 +1063,8 @@ func TestParseAndCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseOrStatement validates the correct parsing of or commands.
-func TestParseOrStatement(t *testing.T) {
+// TestParser_ParseOrStatement validates the correct parsing of or commands.
+func TestParser_ParseOrStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1084,8 +1141,8 @@ func TestParseOrStatement(t *testing.T) {
 	}
 }
 
-// TestParseOrCCStatement validates the correct parsing of orcc commands.
-func TestParseOrCCStatement(t *testing.T) {
+// TestParser_ParseOrCCStatement validates the correct parsing of orcc commands.
+func TestParser_ParseOrCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1162,8 +1219,8 @@ func TestParseOrCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseOrnStatement validates the correct parsing of orn commands.
-func TestParseOrnStatement(t *testing.T) {
+// TestParser_ParseOrnStatement validates the correct parsing of orn commands.
+func TestParser_ParseOrnStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1240,8 +1297,8 @@ func TestParseOrnStatement(t *testing.T) {
 	}
 }
 
-// TestParseOrnCCStatement validates the correct parsing of orncc commands.
-func TestParseOrnCCStatement(t *testing.T) {
+// TestParser_ParseOrnCCStatement validates the correct parsing of orncc commands.
+func TestParser_ParseOrnCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1318,8 +1375,8 @@ func TestParseOrnCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseXorStatement validates the correct parsing of xor commands.
-func TestParseXorStatement(t *testing.T) {
+// TestParser_ParseXorStatement validates the correct parsing of xor commands.
+func TestParser_ParseXorStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1396,8 +1453,8 @@ func TestParseXorStatement(t *testing.T) {
 	}
 }
 
-// TestParseXorCCStatement validates the correct parsing of xorcc commands.
-func TestParseXorCCStatement(t *testing.T) {
+// TestParser_ParseXorCCStatement validates the correct parsing of xorcc commands.
+func TestParser_ParseXorCCStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1474,8 +1531,8 @@ func TestParseXorCCStatement(t *testing.T) {
 	}
 }
 
-// TestParseSLLStatement validates the correct parsing of sll commands.
-func TestParseSLLStatement(t *testing.T) {
+// TestParser_ParseSLLStatement validates the correct parsing of sll commands.
+func TestParser_ParseSLLStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1552,8 +1609,8 @@ func TestParseSLLStatement(t *testing.T) {
 	}
 }
 
-// TestParseSRAStatement validates the correct parsing of sra commands.
-func TestParseSRAStatement(t *testing.T) {
+// TestParser_ParseSRAStatement validates the correct parsing of sra commands.
+func TestParser_ParseSRAStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1630,8 +1687,8 @@ func TestParseSRAStatement(t *testing.T) {
 	}
 }
 
-// TestParseBEStatement validates the correct parsing of be commands.
-func TestParseBEStatement(t *testing.T) {
+// TestParser_ParseBEStatement validates the correct parsing of be commands.
+func TestParser_ParseBEStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1688,8 +1745,8 @@ func TestParseBEStatement(t *testing.T) {
 	}
 }
 
-// TestParseBNEStatement validates the correct parsing of bne commands.
-func TestParseBNEStatement(t *testing.T) {
+// TestParser_ParseBNEStatement validates the correct parsing of bne commands.
+func TestParser_ParseBNEStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1746,8 +1803,8 @@ func TestParseBNEStatement(t *testing.T) {
 	}
 }
 
-// TestParseBNEGStatement validates the correct parsing of bneg commands.
-func TestParseBNEGStatement(t *testing.T) {
+// TestParser_ParseBNEGStatement validates the correct parsing of bneg commands.
+func TestParser_ParseBNEGStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1804,8 +1861,8 @@ func TestParseBNEGStatement(t *testing.T) {
 	}
 }
 
-// TestParseBPOSStatement validates the correct parsing of bpos commands.
-func TestParseBPOSStatement(t *testing.T) {
+// TestParser_ParseBPOSStatement validates the correct parsing of bpos commands.
+func TestParser_ParseBPOSStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1862,8 +1919,8 @@ func TestParseBPOSStatement(t *testing.T) {
 	}
 }
 
-// TestParseBAStatement validates the correct parsing of ba commands.
-func TestParseBAStatement(t *testing.T) {
+// TestParser_ParseBAStatement validates the correct parsing of ba commands.
+func TestParser_ParseBAStatement(t *testing.T) {
 	tests := []struct {
 		str  string
 		stmt ast.Statement
@@ -1920,8 +1977,8 @@ func TestParseBAStatement(t *testing.T) {
 	}
 }
 
-// TestParseIdent verifies the correct parsing of identifiers.
-func TestParseIdent(t *testing.T) {
+// TestParser_ParseIdent verifies the correct parsing of identifiers.
+func TestParser_ParseIdent(t *testing.T) {
 	tests := []struct {
 		str string
 		obj *ast.Identifier
@@ -1946,8 +2003,8 @@ func TestParseIdent(t *testing.T) {
 	}
 }
 
-// TestParseRegister verifies the correct parsing of registers.
-func TestParseRegister(t *testing.T) {
+// TestParser_ParseRegister verifies the correct parsing of registers.
+func TestParser_ParseRegister(t *testing.T) {
 	tests := []struct {
 		str string
 		obj *ast.Register
@@ -1970,8 +2027,8 @@ func TestParseRegister(t *testing.T) {
 	}
 }
 
-// TestParseInteger verifies the correct parsing of integers.
-func TestParseInteger(t *testing.T) {
+// TestParser_ParseInteger verifies the correct parsing of integers.
+func TestParser_ParseInteger(t *testing.T) {
 	tests := []struct {
 		str string
 		obj *ast.Integer
@@ -1999,8 +2056,8 @@ func TestParseInteger(t *testing.T) {
 	}
 }
 
-// TestParseSIMM13 verifies the correct parsing of SIMM13 integers.
-func TestParseSIMM13(t *testing.T) {
+// TestParser_ParseSIMM13 verifies the correct parsing of SIMM13 integers.
+func TestParser_ParseSIMM13(t *testing.T) {
 	tests := []struct {
 		str string
 		obj *ast.Integer
@@ -2029,8 +2086,8 @@ func TestParseSIMM13(t *testing.T) {
 	}
 }
 
-// TestParseExpression verifies the correct parsing of expressions.
-func TestParseExpression(t *testing.T) {
+// TestParser_ParseExpression verifies the correct parsing of expressions.
+func TestParser_ParseExpression(t *testing.T) {
 	tests := []struct {
 		str string
 		obj *ast.Expression
@@ -2062,8 +2119,8 @@ func TestParseExpression(t *testing.T) {
 	}
 }
 
-// TestParseMemoryLocation verifies the correct parsing of operands.
-func TestParseOperand(t *testing.T) {
+// TestParser_ParseMemoryLocation verifies the correct parsing of operands.
+func TestParser_ParseOperand(t *testing.T) {
 	tests := []struct {
 		str string
 		obj ast.Operand
@@ -2087,8 +2144,8 @@ func TestParseOperand(t *testing.T) {
 	}
 }
 
-// TestParseMemoryLocation verifies the correct parsing of memory locations.
-func TestParseMemoryLocation(t *testing.T) {
+// TestParser_ParseMemoryLocation verifies the correct parsing of memory locations.
+func TestParser_ParseMemoryLocation(t *testing.T) {
 	tests := []struct {
 		str string
 		obj ast.MemoryLocation
@@ -2164,6 +2221,7 @@ func posAfter(char int) token.Pos {
 
 // assert fails the test if the condition is false.
 func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
+	tb.Helper()
 	if !condition {
 		_, file, line, _ := runtime.Caller(1)
 		fmt.Printf("\033[31m%s:%d: "+msg+"\033[39m\n\n", append([]interface{}{filepath.Base(file), line}, v...)...)
@@ -2173,6 +2231,7 @@ func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 
 // ok fails the test if an err is not nil.
 func ok(tb testing.TB, err error) {
+	tb.Helper()
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
 		fmt.Printf("\033[31m%s:%d: unttected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
@@ -2182,6 +2241,7 @@ func ok(tb testing.TB, err error) {
 
 // equals fails the test if tt is not equal to act.
 func equals(tb testing.TB, tt, act interface{}) {
+	tb.Helper()
 	if !reflect.DeepEqual(tt, act) {
 		_, file, line, _ := runtime.Caller(1)
 		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, tt, act)

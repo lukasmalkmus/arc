@@ -65,14 +65,25 @@ func TestReadDir(t *testing.T) {
 		folder string
 		files  []string
 	}{
-		{".", []string{"valid.arc"}},
+		{".", []string{"array_sum.arc", "valid.arc"}},
 		{"sub", []string{"valid_too.arc"}},
 		{"empty_sub", []string{}},
 	}
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			files, err := ReadDir(tt.folder)
+			var (
+				files []string
+				err   error
+			)
+
+			if tt.folder == "." {
+				files, err = ReadCurDir()
+			} else {
+				files, err = ReadDir(tt.folder)
+
+			}
+
 			ok(t, err)
 			equals(t, tt.files, files)
 		})

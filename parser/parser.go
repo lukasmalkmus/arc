@@ -129,10 +129,34 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		p.scanIgnoreNewLine()
 	}
 
-	// Generate error for unresolved identifiers.
+	// Generate errors for unresolved identifiers.
 	for lit, ident := range p.unresolvedIdents {
 		err := &ParseError{Pos: ident.Pos(), Message: fmt.Sprintf("unresolved IDENTIFIER %q", lit)}
 		errs.Add(err)
+	}
+
+	// Generate errors for subroutine calls which call a label that doesn't
+	// point to another statement (but to an integer for example).
+	for _, stmt := range prog.Statements {
+		// Check if the statement is a call statement.
+		callStmt, valid := stmt.(*ast.CallStatement)
+		if !valid {
+			continue
+		}
+
+		// Get the calls target label.
+		subRoutine, ok := p.declaredLabels[callStmt.Target.String()]
+		if !ok {
+			continue
+		}
+
+		// Generate an error if the soubroutines target label references an
+		// integer value.
+		// TODO: Improve this part: Don't just check for integers.
+		if ref, valid := subRoutine.Reference.(*ast.Integer); valid {
+			err := &ParseError{Pos: callStmt.Pos(), Message: fmt.Sprintf("impossible subroutine call to %q (references %s)", subRoutine.Ident, ref.Token)}
+			errs.Add(err)
+		}
 	}
 
 	// Sort errors.
@@ -142,8 +166,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 }
 
 // ParseStatement parses lexical tokens into a Statement AST object.
-func (p *Parser) ParseStatement() (ast.Statement, error) {
-	// Read the first token.
+func (p *Parser) ParseStatement() (stmt ast.Statement, err error) {
+	// Read the first token and parse and allow referenced label parsing.
 	p.next()
 	return p.parseStatement(true)
 }
@@ -152,7 +176,7 @@ func (p *Parser) ParseStatement() (ast.Statement, error) {
 // identifiers into LabelStatement AST objects can be turned off by passing
 // false. This is useful for avoiding recursive parsing of labels. Labels can't
 // reference another label.
-func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
+func (p *Parser) parseStatement(withLabel bool) (stmt ast.Statement, err error) {
 	switch p.tok {
 	case token.COMMENT:
 		return p.parseCommentStatement()
@@ -209,6 +233,10 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 		return p.parseBPOSStatement()
 	case token.BA:
 		return p.parseBAStatement()
+	case token.CALL:
+		return p.parseCallStatement()
+	case token.JMPL:
+		return p.parseJumpAndLinkStatement()
 	}
 
 	// We expect a comment, an identifier, a directive or a keyword.
@@ -220,8 +248,8 @@ func (p *Parser) parseStatement(withLabel bool) (ast.Statement, error) {
 }
 
 // parseCommentStatement parses a CommentStatement AST object.
-func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
-	stmt := &ast.CommentStatement{Token: p.tok, Position: p.pos, Text: p.lit}
+func (p *Parser) parseCommentStatement() (stmt *ast.CommentStatement, err error) {
+	stmt = &ast.CommentStatement{Token: p.tok, Position: p.pos, Text: p.lit}
 
 	// The comment should end after its literal value.
 	// if err := p.expectStatementEndOrComment(); err != nil {
@@ -233,8 +261,8 @@ func (p *Parser) parseCommentStatement() (*ast.CommentStatement, error) {
 }
 
 // parseBeginStatement parses a BeginStatement AST object.
-func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
-	stmt := &ast.BeginStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBeginStatement() (stmt *ast.BeginStatement, err error) {
+	stmt = &ast.BeginStatement{Token: p.tok, Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -246,8 +274,8 @@ func (p *Parser) parseBeginStatement() (*ast.BeginStatement, error) {
 }
 
 // parseEndStatement parses an EndStatement AST object.
-func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
-	stmt := &ast.EndStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseEndStatement() (stmt *ast.EndStatement, err error) {
+	stmt = &ast.EndStatement{Token: p.tok, Position: p.pos}
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -259,15 +287,14 @@ func (p *Parser) parseEndStatement() (*ast.EndStatement, error) {
 }
 
 // parseOrgStatement parses an OrgStatement AST object.
-func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
-	stmt := &ast.OrgStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseOrgStatement() (stmt *ast.OrgStatement, err error) {
+	stmt = &ast.OrgStatement{Token: p.tok, Position: p.pos}
 
 	// The directive should be followed by an integer.
-	val, err := p.parseInteger()
+	stmt.Value, err = p.parseInteger()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Value = val
 
 	// Finally we should see the end of the directive.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -278,8 +305,8 @@ func (p *Parser) parseOrgStatement() (*ast.OrgStatement, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
-	stmt := &ast.LabelStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseLabelStatement() (stmt *ast.LabelStatement, err error) {
+	stmt = &ast.LabelStatement{Token: p.tok, Position: p.pos}
 
 	// Create label identifier.
 	stmt.Ident = &ast.Identifier{Token: p.tok, Position: p.pos, Name: p.lit}
@@ -301,11 +328,11 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 	// TODO: We need a string datatype!
 	if p.next(); p.tok == token.INT {
 		p.unscan()
-		ref, err := p.parseInteger()
+		stmt.Reference, err = p.parseInteger()
 		if err != nil {
 			return nil, err
 		}
-		stmt.Reference = ref
+
 	} else {
 		ref, err := p.parseStatement(false)
 		if err != nil {
@@ -337,15 +364,14 @@ func (p *Parser) parseLabelStatement() (*ast.LabelStatement, error) {
 }
 
 // parseLoadStatement parses a LoadStatement AST object.
-func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
-	stmt := &ast.LoadStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseLoadStatement() (stmt *ast.LoadStatement, err error) {
+	stmt = &ast.LoadStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source memory location.
-	src, err := p.parseMemoryLocation()
+	stmt.Source, err = p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = src
 
 	// Next we should see a comma as seperator between source and destination.
 	if p.next(); p.tok != token.COMMA {
@@ -353,11 +379,10 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 	}
 
 	// Next we should see the destination register.
-	dest, err := p.parseRegister()
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -369,15 +394,14 @@ func (p *Parser) parseLoadStatement() (*ast.LoadStatement, error) {
 }
 
 // parseStoreStatement parses a StoreStatement AST object.
-func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
-	stmt := &ast.StoreStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseStoreStatement() (stmt *ast.StoreStatement, err error) {
+	stmt = &ast.StoreStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	src, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = src
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -385,11 +409,10 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 	}
 
 	// Next we should see the destination memory location.
-	dest, err := p.parseMemoryLocation()
+	stmt.Destination, err = p.parseMemoryLocation()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -401,15 +424,14 @@ func (p *Parser) parseStoreStatement() (*ast.StoreStatement, error) {
 }
 
 // parseAddStatement parses an AddStatement AST object.
-func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
-	stmt := &ast.AddStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseAddStatement() (stmt *ast.AddStatement, err error) {
+	stmt = &ast.AddStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -417,23 +439,21 @@ func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -445,7 +465,7 @@ func (p *Parser) parseAddStatement() (*ast.AddStatement, error) {
 }
 
 // parseAddCCStatement parses an AddCCStatement AST object.
-func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
+func (p *Parser) parseAddCCStatement() (stmt *ast.AddCCStatement, err error) {
 	// Parse usual add statement.
 	addStmt, err := p.parseAddStatement()
 	if err != nil {
@@ -453,7 +473,7 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 	}
 
 	// Transform to addcc.
-	stmt := &ast.AddCCStatement{
+	stmt = &ast.AddCCStatement{
 		Token:       addStmt.Token,
 		Position:    addStmt.Position,
 		Source:      addStmt.Source,
@@ -466,15 +486,14 @@ func (p *Parser) parseAddCCStatement() (*ast.AddCCStatement, error) {
 }
 
 // parseSubStatement parses a SubStatement AST object.
-func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
-	stmt := &ast.SubStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseSubStatement() (stmt *ast.SubStatement, err error) {
+	stmt = &ast.SubStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -482,23 +501,21 @@ func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -510,7 +527,7 @@ func (p *Parser) parseSubStatement() (*ast.SubStatement, error) {
 }
 
 // parseSubCCStatement parses a SubCCStatement AST object.
-func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
+func (p *Parser) parseSubCCStatement() (stmt *ast.SubCCStatement, err error) {
 	// Parse usual sub statement.
 	subStmt, err := p.parseSubStatement()
 	if err != nil {
@@ -518,7 +535,7 @@ func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
 	}
 
 	// Transform to subcc.
-	stmt := &ast.SubCCStatement{
+	stmt = &ast.SubCCStatement{
 		Token:       subStmt.Token,
 		Position:    subStmt.Position,
 		Source:      subStmt.Source,
@@ -531,15 +548,14 @@ func (p *Parser) parseSubCCStatement() (*ast.SubCCStatement, error) {
 }
 
 // parseAndStatement parses an AndStatement AST object.
-func (p *Parser) parseAndStatement() (*ast.AndStatement, error) {
-	stmt := &ast.AndStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseAndStatement() (stmt *ast.AndStatement, err error) {
+	stmt = &ast.AndStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -547,23 +563,21 @@ func (p *Parser) parseAndStatement() (*ast.AndStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -575,7 +589,7 @@ func (p *Parser) parseAndStatement() (*ast.AndStatement, error) {
 }
 
 // parseAndCCStatement parses an AndCCStatement AST object.
-func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
+func (p *Parser) parseAndCCStatement() (stmt *ast.AndCCStatement, err error) {
 	// Parse usual and statement.
 	andStmt, err := p.parseAndStatement()
 	if err != nil {
@@ -583,7 +597,7 @@ func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
 	}
 
 	// Transform to andcc.
-	stmt := &ast.AndCCStatement{
+	stmt = &ast.AndCCStatement{
 		Token:       andStmt.Token,
 		Position:    andStmt.Position,
 		Source:      andStmt.Source,
@@ -596,15 +610,14 @@ func (p *Parser) parseAndCCStatement() (*ast.AndCCStatement, error) {
 }
 
 // parseOrStatement parses an OrStatement AST object.
-func (p *Parser) parseOrStatement() (*ast.OrStatement, error) {
-	stmt := &ast.OrStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseOrStatement() (stmt *ast.OrStatement, err error) {
+	stmt = &ast.OrStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -612,23 +625,21 @@ func (p *Parser) parseOrStatement() (*ast.OrStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -640,7 +651,7 @@ func (p *Parser) parseOrStatement() (*ast.OrStatement, error) {
 }
 
 // parseOrCCStatement parses an OrCCStatement AST object.
-func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
+func (p *Parser) parseOrCCStatement() (stmt *ast.OrCCStatement, err error) {
 	// Parse usual or statement.
 	orStmt, err := p.parseOrStatement()
 	if err != nil {
@@ -648,7 +659,7 @@ func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
 	}
 
 	// Transform to orcc.
-	stmt := &ast.OrCCStatement{
+	stmt = &ast.OrCCStatement{
 		Token:       orStmt.Token,
 		Position:    orStmt.Position,
 		Source:      orStmt.Source,
@@ -661,15 +672,14 @@ func (p *Parser) parseOrCCStatement() (*ast.OrCCStatement, error) {
 }
 
 // parseOrnStatement parses an OrnStatement AST object.
-func (p *Parser) parseOrnStatement() (*ast.OrnStatement, error) {
-	stmt := &ast.OrnStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseOrnStatement() (stmt *ast.OrnStatement, err error) {
+	stmt = &ast.OrnStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -677,23 +687,21 @@ func (p *Parser) parseOrnStatement() (*ast.OrnStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -705,7 +713,7 @@ func (p *Parser) parseOrnStatement() (*ast.OrnStatement, error) {
 }
 
 // parseOrnCCStatement parses an OrnCCStatement AST object.
-func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
+func (p *Parser) parseOrnCCStatement() (stmt *ast.OrnCCStatement, err error) {
 	// Parse usual orn statement.
 	ornStmt, err := p.parseOrnStatement()
 	if err != nil {
@@ -713,7 +721,7 @@ func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
 	}
 
 	// Transform to orncc.
-	stmt := &ast.OrnCCStatement{
+	stmt = &ast.OrnCCStatement{
 		Token:       ornStmt.Token,
 		Position:    ornStmt.Position,
 		Source:      ornStmt.Source,
@@ -726,15 +734,14 @@ func (p *Parser) parseOrnCCStatement() (*ast.OrnCCStatement, error) {
 }
 
 // parseXorStatement parses a XorStatement AST object.
-func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
-	stmt := &ast.XorStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseXorStatement() (stmt *ast.XorStatement, err error) {
+	stmt = &ast.XorStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -742,23 +749,21 @@ func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -770,7 +775,7 @@ func (p *Parser) parseXorStatement() (*ast.XorStatement, error) {
 }
 
 // parseXorCCStatement parses a XorCCStatement AST object.
-func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
+func (p *Parser) parseXorCCStatement() (stmt *ast.XorCCStatement, err error) {
 	// Parse usual xor statement.
 	xorStmt, err := p.parseXorStatement()
 	if err != nil {
@@ -778,7 +783,7 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 	}
 
 	// Transform xto orcc.
-	stmt := &ast.XorCCStatement{
+	stmt = &ast.XorCCStatement{
 		Token:       xorStmt.Token,
 		Position:    xorStmt.Position,
 		Source:      xorStmt.Source,
@@ -791,15 +796,14 @@ func (p *Parser) parseXorCCStatement() (*ast.XorCCStatement, error) {
 }
 
 // parseSLLStatement parses a SLLStatement AST object.
-func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
-	stmt := &ast.SLLStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseSLLStatement() (stmt *ast.SLLStatement, err error) {
+	stmt = &ast.SLLStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -807,23 +811,21 @@ func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -835,15 +837,14 @@ func (p *Parser) parseSLLStatement() (*ast.SLLStatement, error) {
 }
 
 // parseSRAStatement parses a SRAStatement AST object.
-func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
-	stmt := &ast.SRAStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseSRAStatement() (stmt *ast.SRAStatement, err error) {
+	stmt = &ast.SRAStatement{Token: p.tok, Position: p.pos}
 
 	// First we should see the source register.
-	reg, err := p.parseRegister()
+	stmt.Source, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Source = reg
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
@@ -851,23 +852,21 @@ func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
 	}
 
 	// Then we should see the second operand.
-	second, err := p.parseOperand()
+	stmt.Operand, err = p.parseOperand()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Operand = second
 
 	// Next we should see a comma as seperator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
 
-	// The last valueable information is the destination register.
-	dest, err := p.parseRegister()
+	// The last needed information is the destination register.
+	stmt.Destination, err = p.parseRegister()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Destination = dest
 
 	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -879,15 +878,14 @@ func (p *Parser) parseSRAStatement() (*ast.SRAStatement, error) {
 }
 
 // parseBEStatement parses a BEStatement AST object.
-func (p *Parser) parseBEStatement() (*ast.BEStatement, error) {
-	stmt := &ast.BEStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBEStatement() (stmt *ast.BEStatement, err error) {
+	stmt = &ast.BEStatement{Token: p.tok, Position: p.pos}
 
 	// The label referenced by the branch statement.
-	ident, err := p.parseIdent()
+	stmt.Target, err = p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Target = ident
 
 	// The comment should end after its literal value.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -899,15 +897,14 @@ func (p *Parser) parseBEStatement() (*ast.BEStatement, error) {
 }
 
 // parseBNEStatement parses a BNEStatement AST object.
-func (p *Parser) parseBNEStatement() (*ast.BNEStatement, error) {
-	stmt := &ast.BNEStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBNEStatement() (stmt *ast.BNEStatement, err error) {
+	stmt = &ast.BNEStatement{Token: p.tok, Position: p.pos}
 
 	// The label referenced by the branch statement.
-	ident, err := p.parseIdent()
+	stmt.Target, err = p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Target = ident
 
 	// The comment should end after its literal value.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -919,15 +916,14 @@ func (p *Parser) parseBNEStatement() (*ast.BNEStatement, error) {
 }
 
 // parseBNEGStatement parses a BNEGStatement AST object.
-func (p *Parser) parseBNEGStatement() (*ast.BNEGStatement, error) {
-	stmt := &ast.BNEGStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBNEGStatement() (stmt *ast.BNEGStatement, err error) {
+	stmt = &ast.BNEGStatement{Token: p.tok, Position: p.pos}
 
 	// The label referenced by the branch statement.
-	ident, err := p.parseIdent()
+	stmt.Target, err = p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Target = ident
 
 	// The comment should end after its literal value.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -939,15 +935,14 @@ func (p *Parser) parseBNEGStatement() (*ast.BNEGStatement, error) {
 }
 
 // parseBPOSStatement parses a BPOSStatement AST object.
-func (p *Parser) parseBPOSStatement() (*ast.BPOSStatement, error) {
-	stmt := &ast.BPOSStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBPOSStatement() (stmt *ast.BPOSStatement, err error) {
+	stmt = &ast.BPOSStatement{Token: p.tok, Position: p.pos}
 
 	// The label referenced by the branch statement.
-	ident, err := p.parseIdent()
+	stmt.Target, err = p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Target = ident
 
 	// The comment should end after its literal value.
 	if err := p.expectStatementEndOrComment(); err != nil {
@@ -959,17 +954,65 @@ func (p *Parser) parseBPOSStatement() (*ast.BPOSStatement, error) {
 }
 
 // parseBAStatement parses an BAStatement AST object.
-func (p *Parser) parseBAStatement() (*ast.BAStatement, error) {
-	stmt := &ast.BAStatement{Token: p.tok, Position: p.pos}
+func (p *Parser) parseBAStatement() (stmt *ast.BAStatement, err error) {
+	stmt = &ast.BAStatement{Token: p.tok, Position: p.pos}
 
 	// The label referenced by the branch statement.
-	ident, err := p.parseIdent()
+	stmt.Target, err = p.parseIdent()
 	if err != nil {
 		return nil, err
 	}
-	stmt.Target = ident
 
 	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseCallStatement parses an CallStatement AST object.
+func (p *Parser) parseCallStatement() (stmt *ast.CallStatement, err error) {
+	stmt = &ast.CallStatement{Token: p.tok, Position: p.pos}
+
+	// The label referenced by the call statement.
+	stmt.Target, err = p.parseIdent()
+	if err != nil {
+		return nil, err
+	}
+
+	// The comment should end after its literal value.
+	if err := p.expectStatementEndOrComment(); err != nil {
+		return nil, err
+	}
+
+	// Return the successfully parsed statement.
+	return stmt, nil
+}
+
+// parseJumpAndLinkStatement parses a JumpAndLinkStatement AST object.
+func (p *Parser) parseJumpAndLinkStatement() (stmt *ast.JumpAndLinkStatement, err error) {
+	stmt = &ast.JumpAndLinkStatement{Token: p.tok, Position: p.pos}
+
+	// First we should see the source memory location.
+	stmt.ReturnAddress, err = p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	// Next we should see a comma as seperator between source and destination.
+	if p.next(); p.tok != token.COMMA {
+		return nil, p.newParseError(token.COMMA)
+	}
+
+	// Next we should see the destination register.
+	stmt.FromAddress, err = p.parseRegister()
+	if err != nil {
+		return nil, err
+	}
+
+	// Finally we should see the end of the statement.
 	if err := p.expectStatementEndOrComment(); err != nil {
 		return nil, err
 	}
@@ -1032,17 +1075,21 @@ func (p *Parser) parseSIMM13() (*ast.Integer, error) {
 }
 
 // parseExpression parses an expression and creates an Expression AST object.
-func (p *Parser) parseExpression() (*ast.Expression, error) {
-	exp := &ast.Expression{Position: p.pos}
+func (p *Parser) parseExpression() (exp *ast.Expression, err error) {
+	exp = &ast.Expression{Position: p.pos}
 
-	// A left square bracket indicates the beginning of an expression.
-	if p.next(); p.tok != token.LBRACKET {
-		return nil, p.newParseError(token.LBRACKET)
+	// A left square bracket is optional and indicates the beginning of an
+	// expression.
+	var sawBracket bool
+	if p.next(); p.tok == token.LBRACKET {
+		sawBracket = true
+	} else {
+		p.unscan()
 	}
 
-	// Opening bracket is followed by identifer or register. Checking errors of
-	// the parse functions isn't required here, because we have already checked
-	// for the correct token.
+	// Expect identifer or register. Checking errors of the parse functions
+	// isn't required here, because we have already checked for the correct
+	// token.
 	if p.next(); p.tok == token.IDENT {
 		p.unscan()
 		ident, _ := p.parseIdent()
@@ -1055,28 +1102,33 @@ func (p *Parser) parseExpression() (*ast.Expression, error) {
 		return nil, p.newParseError(token.IDENT, token.REG)
 	}
 
-	// After the base we expect a closing bracket which indicates a direct
-	// expression or an operator which indicates an offset expression.
-	if p.next(); p.tok != token.RBRACKET {
-		// If we don't see the closing square bracket, we expect to see an
-		// operator.
-		if p.tok != token.PLUS && p.tok != token.MINUS {
-			return nil, p.newParseError(token.PLUS, token.MINUS, token.RBRACKET)
-		}
+	// After the base we either expect an operator or a closing bracket. The
+	// closing bracket is not allowed if there was no opening bracket.
+	if p.next(); !sawBracket && p.tok == token.EOF {
+		return exp, nil
+	} else if !p.tok.IsOperator() && p.tok != token.RBRACKET {
+		return nil, p.newParseError(token.PLUS, token.MINUS, token.RBRACKET)
+	} else if !sawBracket && p.tok == token.RBRACKET {
+		return nil, p.newParseError(token.PLUS, token.MINUS)
+	}
+
+	// If we don't see the closing square bracket, we expect to see an
+	// operator.
+	if p.tok.IsOperator() {
 		exp.Operator = p.lit
 
 		// We expect the offset value.
-		val, err := p.parseSIMM13()
+		exp.Offset, err = p.parseSIMM13()
 		if err != nil {
 			return nil, err
 		}
-		exp.Offset = val
 	} else {
 		p.unscan()
 	}
 
-	// The expression must close with a right square bracket.
-	if p.next(); p.tok != token.RBRACKET {
+	// The expression must close with a right square bracket if one was
+	// specified.
+	if p.next(); sawBracket && p.tok != token.RBRACKET {
 		return nil, p.newParseError(token.RBRACKET)
 	}
 

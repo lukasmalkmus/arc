@@ -22,32 +22,34 @@ type Statement interface {
 	String() string
 }
 
-func (*CommentStatement) stmt() {}
-func (*BeginStatement) stmt()   {}
-func (*EndStatement) stmt()     {}
-func (*OrgStatement) stmt()     {}
-func (*LabelStatement) stmt()   {}
-func (*LoadStatement) stmt()    {}
-func (*StoreStatement) stmt()   {}
-func (*AddStatement) stmt()     {}
-func (*AddCCStatement) stmt()   {}
-func (*SubStatement) stmt()     {}
-func (*SubCCStatement) stmt()   {}
-func (*AndStatement) stmt()     {}
-func (*AndCCStatement) stmt()   {}
-func (*OrStatement) stmt()      {}
-func (*OrCCStatement) stmt()    {}
-func (*OrnStatement) stmt()     {}
-func (*OrnCCStatement) stmt()   {}
-func (*XorStatement) stmt()     {}
-func (*XorCCStatement) stmt()   {}
-func (*SLLStatement) stmt()     {}
-func (*SRAStatement) stmt()     {}
-func (*BEStatement) stmt()      {}
-func (*BNEStatement) stmt()     {}
-func (*BNEGStatement) stmt()    {}
-func (*BPOSStatement) stmt()    {}
-func (*BAStatement) stmt()      {}
+func (*CommentStatement) stmt()     {}
+func (*BeginStatement) stmt()       {}
+func (*EndStatement) stmt()         {}
+func (*OrgStatement) stmt()         {}
+func (*LabelStatement) stmt()       {}
+func (*LoadStatement) stmt()        {}
+func (*StoreStatement) stmt()       {}
+func (*AddStatement) stmt()         {}
+func (*AddCCStatement) stmt()       {}
+func (*SubStatement) stmt()         {}
+func (*SubCCStatement) stmt()       {}
+func (*AndStatement) stmt()         {}
+func (*AndCCStatement) stmt()       {}
+func (*OrStatement) stmt()          {}
+func (*OrCCStatement) stmt()        {}
+func (*OrnStatement) stmt()         {}
+func (*OrnCCStatement) stmt()       {}
+func (*XorStatement) stmt()         {}
+func (*XorCCStatement) stmt()       {}
+func (*SLLStatement) stmt()         {}
+func (*SRAStatement) stmt()         {}
+func (*BEStatement) stmt()          {}
+func (*BNEStatement) stmt()         {}
+func (*BNEGStatement) stmt()        {}
+func (*BPOSStatement) stmt()        {}
+func (*BAStatement) stmt()          {}
+func (*CallStatement) stmt()        {}
+func (*JumpAndLinkStatement) stmt() {}
 
 // Reference is implemented by types which can be referenced by a label. These
 // are statements and identifiers.
@@ -100,7 +102,7 @@ type ExpressionBase interface {
 func (*Identifier) epb() {}
 func (*Register) epb()   {}
 
-// Operand is implemented by types which can be used as operands in arithmetic
+// Operand is implemented by types which can be used as operands in Arithmetic
 // operations.
 type Operand interface {
 	// op is unexported to ensure implementations of Reference can only
@@ -140,6 +142,33 @@ func (p *Program) AddStatement(stmts ...Statement) {
 			p.Statements = append(p.Statements, stmt)
 		}
 	}
+}
+
+// Format describes the instruction format of a statement/instruction.
+type Format int
+
+const (
+	// Branch is the branch instruction format.
+	Branch Format = iota
+
+	// Sethi is the sethi instruction format.
+	Sethi
+
+	// Call is the call instruction format.
+	Call
+
+	// Arithmetic is the Arithmetic instruction format.
+	Arithmetic
+
+	// Memory is the memory instruction format.
+	Memory
+)
+
+// InstructionFormat is implemented by every top-level statement which can be
+// assembled to ensure the instruction format is known. This is important since
+// the build package relies on this behaviour.
+type InstructionFormat interface {
+	InstructionFormat() Format
 }
 
 // CommentStatement represents a comment.
@@ -302,6 +331,10 @@ func (stmt LoadStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (LoadStatement) InstructionFormat() Format { return Memory }
+
 // StoreStatement represents a store command (st).
 type StoreStatement struct {
 	// Token is the statements lexical token.
@@ -334,6 +367,10 @@ func (stmt StoreStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (StoreStatement) InstructionFormat() Format { return Memory }
+
 // AddStatement represents an add command (add).
 type AddStatement struct {
 	// Token is the statements lexical token.
@@ -345,7 +382,7 @@ type AddStatement struct {
 	Source *Register
 	// Operand is the second one of the two operands.
 	Operand Operand
-	// Destination is the target register receiving the result of the arithmetic
+	// Destination is the target register receiving the result of the Arithmetic
 	// operation.
 	Destination *Register
 }
@@ -371,6 +408,10 @@ func (stmt AddStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (AddStatement) InstructionFormat() Format { return Arithmetic }
+
 // AddCCStatement represents an add (conditional codes set) command (addcc).
 type AddCCStatement struct {
 	// Token is the statements lexical token.
@@ -382,7 +423,7 @@ type AddCCStatement struct {
 	Source *Register
 	// Operand is the second one of the two operands.
 	Operand Operand
-	// Destination is the target register receiving the result of the arithmetic
+	// Destination is the target register receiving the result of the Arithmetic
 	// operation.
 	Destination *Register
 }
@@ -408,6 +449,10 @@ func (stmt AddCCStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (AddCCStatement) InstructionFormat() Format { return Arithmetic }
+
 // SubStatement represents a sub command (sub).
 type SubStatement struct {
 	// Token is the statements lexical token.
@@ -419,7 +464,7 @@ type SubStatement struct {
 	Source *Register
 	// Operand is the second one of the two operands.
 	Operand Operand
-	// Destination is the target register receiving the result of the arithmetic
+	// Destination is the target register receiving the result of the Arithmetic
 	// operation.
 	Destination *Register
 }
@@ -445,6 +490,10 @@ func (stmt SubStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (SubStatement) InstructionFormat() Format { return Arithmetic }
+
 // SubCCStatement represents a sub (conditional codes set) command (subcc).
 type SubCCStatement struct {
 	// Token is the statements lexical token.
@@ -456,7 +505,7 @@ type SubCCStatement struct {
 	Source *Register
 	// Operand is the second one of the two operands.
 	Operand Operand
-	// Destination is the target register receiving the result of the arithmetic
+	// Destination is the target register receiving the result of the Arithmetic
 	// operation.
 	Destination *Register
 }
@@ -481,6 +530,10 @@ func (stmt SubCCStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (SubCCStatement) InstructionFormat() Format { return Arithmetic }
 
 // AndStatement represents an and command (and).
 type AndStatement struct {
@@ -519,6 +572,10 @@ func (stmt AndStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (AndStatement) InstructionFormat() Format { return Arithmetic }
+
 // AndCCStatement represents an and (conditional codes set) command (andcc).
 type AndCCStatement struct {
 	// Token is the statements lexical token.
@@ -555,6 +612,10 @@ func (stmt AndCCStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (AndCCStatement) InstructionFormat() Format { return Arithmetic }
 
 // OrStatement represents an or command (or).
 type OrStatement struct {
@@ -593,6 +654,10 @@ func (stmt OrStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (OrStatement) InstructionFormat() Format { return Arithmetic }
+
 // OrCCStatement represents an or (conditional codes set) command (orcc).
 type OrCCStatement struct {
 	// Token is the statements lexical token.
@@ -629,6 +694,10 @@ func (stmt OrCCStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (OrCCStatement) InstructionFormat() Format { return Arithmetic }
 
 // OrnStatement represents a orn command (orn).
 type OrnStatement struct {
@@ -667,6 +736,10 @@ func (stmt OrnStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (OrnStatement) InstructionFormat() Format { return Arithmetic }
+
 // OrnCCStatement represents a orn (conditional codes set) command (orncc).
 type OrnCCStatement struct {
 	// Token is the statements lexical token.
@@ -703,6 +776,10 @@ func (stmt OrnCCStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (OrnCCStatement) InstructionFormat() Format { return Arithmetic }
 
 // XorStatement represents a xor command (xor).
 type XorStatement struct {
@@ -741,6 +818,10 @@ func (stmt XorStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (XorStatement) InstructionFormat() Format { return Arithmetic }
+
 // XorCCStatement represents a xor (conditional codes set) command (xorcc).
 type XorCCStatement struct {
 	// Token is the statements lexical token.
@@ -777,6 +858,10 @@ func (stmt XorCCStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (XorCCStatement) InstructionFormat() Format { return Arithmetic }
 
 // SLLStatement represents a shift left logical command (sll).
 type SLLStatement struct {
@@ -815,7 +900,11 @@ func (stmt SLLStatement) String() string {
 	return buf.String()
 }
 
-// SRAStatement represents a shift right arithmetic command (sra).
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (SLLStatement) InstructionFormat() Format { return Arithmetic }
+
+// SRAStatement represents a shift right Arithmetic command (sra).
 type SRAStatement struct {
 	// Token is the statements lexical token.
 	Token token.Token
@@ -826,7 +915,7 @@ type SRAStatement struct {
 	Source *Register
 	// Operand is the second one of the two operands.
 	Operand Operand
-	// Destination is the target register receiving the result of the arithmetic
+	// Destination is the target register receiving the result of the Arithmetic
 	// operation.
 	Destination *Register
 }
@@ -851,6 +940,10 @@ func (stmt SRAStatement) String() string {
 	buf.WriteString(stmt.Destination.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (SRAStatement) InstructionFormat() Format { return Arithmetic }
 
 // BEStatement represents a "branch on equal to zero" command (be).
 type BEStatement struct {
@@ -880,6 +973,10 @@ func (stmt BEStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (BEStatement) InstructionFormat() Format { return Branch }
+
 // BNEStatement represents a "branch on not equal" command (bne).
 type BNEStatement struct {
 	// Token is the statements lexical token.
@@ -907,6 +1004,10 @@ func (stmt BNEStatement) String() string {
 	buf.WriteString(stmt.Target.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (BNEStatement) InstructionFormat() Format { return Branch }
 
 // BNEGStatement represents a "branch on negative" command (bneg).
 type BNEGStatement struct {
@@ -936,6 +1037,10 @@ func (stmt BNEGStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (BNEGStatement) InstructionFormat() Format { return Branch }
+
 // BPOSStatement represents a "branch on positive" command (bpos).
 type BPOSStatement struct {
 	// Token is the statements lexical token.
@@ -964,6 +1069,10 @@ func (stmt BPOSStatement) String() string {
 	return buf.String()
 }
 
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (BPOSStatement) InstructionFormat() Format { return Branch }
+
 // BAStatement represents a "branch always" command (ba).
 type BAStatement struct {
 	// Token is the statements lexical token.
@@ -991,6 +1100,82 @@ func (stmt BAStatement) String() string {
 	buf.WriteString(stmt.Target.String())
 	return buf.String()
 }
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (BAStatement) InstructionFormat() Format { return Branch }
+
+// CallStatement represents a "branch always" command (ba).
+type CallStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// Target is the label which references the subroutine the call statement
+	// calls.
+	Target *Identifier
+}
+
+// Pos returns the statements position.
+func (stmt CallStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt CallStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt CallStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("call ")
+	buf.WriteString(stmt.Target.String())
+	return buf.String()
+}
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (CallStatement) InstructionFormat() Format { return Call }
+
+// JumpAndLinkStatement represents a "branch always" command (ba).
+type JumpAndLinkStatement struct {
+	// Token is the statements lexical token.
+	Token token.Token
+	// Position is the position in the source.
+	Position token.Pos
+
+	// ReturnAddress contains the program address (pc) the program should return
+	// to.
+	ReturnAddress *Expression
+
+	// FromAddress stores the current pc of the statement from which the jmpl
+	// statement returned.
+	FromAddress *Register
+}
+
+// Pos returns the statements position.
+func (stmt JumpAndLinkStatement) Pos() token.Pos {
+	return stmt.Position
+}
+
+// Tok returns the statements lexical token.
+func (stmt JumpAndLinkStatement) Tok() token.Token {
+	return stmt.Token
+}
+
+func (stmt JumpAndLinkStatement) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("jmpl ")
+	buf.WriteString(stmt.ReturnAddress.String())
+	buf.WriteString(", ")
+	buf.WriteString(stmt.FromAddress.String())
+	return buf.String()
+}
+
+// InstructionFormat returns the instruction format of the statement. It
+// implements the InstructionFormat interface to enable assembling.
+func (JumpAndLinkStatement) InstructionFormat() Format { return Call }
 
 // Expression is an expression which bundles an identifier with an offset. In
 // ARC an expression is delimited by an opening and a closing square bracket.

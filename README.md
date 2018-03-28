@@ -1,4 +1,5 @@
 # lukasmalkmus/arc (WIP)
+
 > A complete toolkit for the ARC assembly language. - by **[Lukas Malkmus](https://github.com/lukasmalkmus)**
 
 [![Travis Status][travis_badge]][travis]
@@ -11,39 +12,49 @@
 ---
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
-2. [Features](#features)
-3. [Usage](#usage)
-4. [Contributing](#contributing)
-5. [License](#license)
+1. [Features](#features)
+1. [Usage](#usage)
+1. [Contributing](#contributing)
+1. [License](#license)
 
 ### Introduction
+
 The *arc* tool is a simple command line application which provides powerful
 features that make working with ARC source code a breeze.
 
 ### Features
-  - [x] **Assembling**
-  - [x] **Checking (Vet)**
-  - [x] **Formating**
-  - [x] **Parsing**
+
+- [x] **Assembling**
+- [x] **Checking (Vet)**
+- [x] **Formating**
+- [x] **Parsing**
 
 #### Todo
-  - [ ] **Format invalid ARC source code**
+
+- [ ] **Format invalid ARC source code**
 
 ### Usage
+
 #### Installation
+
 The easiest way to run the *arc* tool is by grabbing the latest binary from
 the [release page][release].
 
 ##### Using go get
+
 If go is installed on your system, installing arc can be accomplished by
 utilizing `go get`:
+
 ```bash
 go get -u -d github.com/lukasmalkmus/arc/cmd/...
 ```
 
 ##### Building from source
+
 This project uses [dep](https://github.com/golang/dep) for vendoring.
+
 ```bash
 git clone https://github.com/lukasmalkmus/arc
 cd arc
@@ -51,7 +62,8 @@ dep ensure
 go install ./... # or make
 ```
 
-#### Usage
+#### How to use
+
 Just run `arc` in your terminal to get some helpful advice.
 
 ```bash
@@ -59,15 +71,16 @@ arc --help
 ```
 
 ### Contributing
+
 Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 
 ### License
+
 © Lukas Malkmus, 2017
 
 Distributed under MIT License (`The MIT License`).
 
 See [LICENSE](LICENSE) for more information.
-
 
 [travis]: https://travis-ci.org/lukasmalkmus/arc
 [travis_badge]: https://travis-ci.org/lukasmalkmus/arc.svg

@@ -1,10 +1,7 @@
 package token_test
 
 import (
-	"fmt"
-	"path/filepath"
 	"reflect"
-	"runtime"
 	"testing"
 
 	"github.com/lukasmalkmus/arc/token"
@@ -168,27 +165,24 @@ func TestLookup(t *testing.T) {
 
 // assert fails the test if the condition is false.
 func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
+	tb.Helper()
 	if !condition {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: "+msg+"\033[39m\n\n", append([]interface{}{filepath.Base(file), line}, v...)...)
-		tb.FailNow()
+		tb.Fatalf("\033[31m "+msg+"\033[39m\n\n", v...)
 	}
 }
 
 // ok fails the test if an err is not nil.
 func ok(tb testing.TB, err error) {
+	tb.Helper()
 	if err != nil {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: unttected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
-		tb.FailNow()
+		tb.Fatalf("\033[31m unexpected error: %s\033[39m\n\n", err.Error())
 	}
 }
 
-// equals fails the test if tt is not equal to act.
-func equals(tb testing.TB, tt, act interface{}) {
-	if !reflect.DeepEqual(tt, act) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, tt, act)
-		tb.FailNow()
+// equals fails the test if got is not equal to want.
+func equals(tb testing.TB, got, want interface{}) {
+	tb.Helper()
+	if !reflect.DeepEqual(got, want) {
+		tb.Fatalf("\033[31m\n\n\tgot: %#v\n\n\twant: %#v\033[39m\n\n", got, want)
 	}
 }

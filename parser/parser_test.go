@@ -2,11 +2,8 @@ package parser
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -127,6 +124,8 @@ func TestFeed(t *testing.T) {
 
 // TestParse will validate the correct parsing of a complete program.
 func TestParse(t *testing.T) {
+	// Error messages of these tests will be +3 chars because of the
+	// indentation.
 	tests := []struct {
 		prog string
 		err  string
@@ -157,7 +156,6 @@ func TestParse(t *testing.T) {
 		},
 		{
 			prog: validProg,
-			// err:  `stuff`,
 		},
 		{
 			prog: arraySum,
@@ -167,6 +165,13 @@ func TestParse(t *testing.T) {
 		ld %r1 %r2
 		.end`,
 			err: `2:10: found REGISTER "%r2", expected ","`,
+		},
+		{
+			prog: `.begin
+		call x
+		x: 25
+		.end`,
+			err: `2:3: impossible subroutine call to "x" (references INTEGER)`,
 		},
 		{
 			prog: `.begin
@@ -206,11 +211,8 @@ func TestParse(t *testing.T) {
 			if tt.err == "" {
 				ok(t, err)
 			} else {
-				// if err == nil {
-				// 	t.Fatalf("expected error but got nil")
-				// }
 				assert(t, err != nil, "expected error but got nil")
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -221,7 +223,7 @@ func TestParse(t *testing.T) {
 func TestParseFile(t *testing.T) {
 	err := os.Chdir("../testdata")
 	if err != nil {
-		t.Error("could not switch to testdata directory")
+		t.Fatal("could not switch to testdata directory")
 	}
 
 	tests := []struct {
@@ -238,10 +240,8 @@ func TestParseFile(t *testing.T) {
 			if tt.err == "" {
 				ok(t, err)
 			} else {
-				if err == nil {
-					t.Fatalf("expected error but got nil")
-				}
-				equals(t, tt.err, err.Error())
+				assert(t, err != nil, "expected error but got nil")
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -263,9 +263,9 @@ func TestParser_ParseCommentStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if commentStmt, valid := tt.stmt.(*ast.CommentStatement); valid {
 				ok(t, err)
-				equals(t, commentStmt, stmt)
+				equals(t, stmt, commentStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -289,9 +289,9 @@ func TestParser_ParseBeginStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if beginStmt, valid := tt.stmt.(*ast.BeginStatement); valid {
 				ok(t, err)
-				equals(t, beginStmt, stmt)
+				equals(t, stmt, beginStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -315,9 +315,9 @@ func TestParser_ParseEndStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if endStmt, valid := tt.stmt.(*ast.EndStatement); valid {
 				ok(t, err)
-				equals(t, endStmt, stmt)
+				equals(t, stmt, endStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -342,9 +342,9 @@ func TestParser_ParseOrgStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if orgStmt, valid := tt.stmt.(*ast.OrgStatement); valid {
 				ok(t, err)
-				equals(t, orgStmt, stmt)
+				equals(t, stmt, orgStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -391,9 +391,9 @@ func TestParser_ParseLabelStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if labelStmt, valid := tt.stmt.(*ast.LabelStatement); valid {
 				ok(t, err)
-				equals(t, labelStmt, stmt)
+				equals(t, stmt, labelStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -489,9 +489,9 @@ func TestParser_ParseLoadStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if loadStmt, valid := tt.stmt.(*ast.LoadStatement); valid {
 				ok(t, err)
-				equals(t, loadStmt, stmt)
+				equals(t, stmt, loadStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -587,9 +587,9 @@ func TestParser_ParseStoreStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if storeStmt, valid := tt.stmt.(*ast.StoreStatement); valid {
 				ok(t, err)
-				equals(t, storeStmt, stmt)
+				equals(t, stmt, storeStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -665,9 +665,9 @@ func TestParser_ParseAddStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if addStmt, valid := tt.stmt.(*ast.AddStatement); valid {
 				ok(t, err)
-				equals(t, addStmt, stmt)
+				equals(t, stmt, addStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -743,9 +743,9 @@ func TestParser_ParseAddCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if addCCStmt, valid := tt.stmt.(*ast.AddCCStatement); valid {
 				ok(t, err)
-				equals(t, addCCStmt, stmt)
+				equals(t, stmt, addCCStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -821,9 +821,9 @@ func TestParser_ParseSubStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if subStmt, valid := tt.stmt.(*ast.SubStatement); valid {
 				ok(t, err)
-				equals(t, subStmt, stmt)
+				equals(t, stmt, subStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -899,9 +899,9 @@ func TestParser_ParseSubCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if subCCStmt, valid := tt.stmt.(*ast.SubCCStatement); valid {
 				ok(t, err)
-				equals(t, subCCStmt, stmt)
+				equals(t, stmt, subCCStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -977,9 +977,9 @@ func TestParser_ParseAndStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if andStmt, valid := tt.stmt.(*ast.AndStatement); valid {
 				ok(t, err)
-				equals(t, andStmt, stmt)
+				equals(t, stmt, andStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1055,9 +1055,9 @@ func TestParser_ParseAndCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if andCCStmt, valid := tt.stmt.(*ast.AndCCStatement); valid {
 				ok(t, err)
-				equals(t, andCCStmt, stmt)
+				equals(t, stmt, andCCStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1133,9 +1133,9 @@ func TestParser_ParseOrStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if orStmt, valid := tt.stmt.(*ast.OrStatement); valid {
 				ok(t, err)
-				equals(t, orStmt, stmt)
+				equals(t, stmt, orStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1211,9 +1211,9 @@ func TestParser_ParseOrCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if orCCStmt, valid := tt.stmt.(*ast.OrCCStatement); valid {
 				ok(t, err)
-				equals(t, orCCStmt, stmt)
+				equals(t, stmt, orCCStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1289,9 +1289,9 @@ func TestParser_ParseOrnStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if ornStmt, valid := tt.stmt.(*ast.OrnStatement); valid {
 				ok(t, err)
-				equals(t, ornStmt, stmt)
+				equals(t, stmt, ornStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1367,9 +1367,9 @@ func TestParser_ParseOrnCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if ornCCStmt, valid := tt.stmt.(*ast.OrnCCStatement); valid {
 				ok(t, err)
-				equals(t, ornCCStmt, stmt)
+				equals(t, stmt, ornCCStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1445,9 +1445,9 @@ func TestParser_ParseXorStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if xorStmt, valid := tt.stmt.(*ast.XorStatement); valid {
 				ok(t, err)
-				equals(t, xorStmt, stmt)
+				equals(t, stmt, xorStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1523,9 +1523,9 @@ func TestParser_ParseXorCCStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if xorccStmt, valid := tt.stmt.(*ast.XorCCStatement); valid {
 				ok(t, err)
-				equals(t, xorccStmt, stmt)
+				equals(t, stmt, xorccStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1601,9 +1601,9 @@ func TestParser_ParseSLLStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if sllStmt, valid := tt.stmt.(*ast.SLLStatement); valid {
 				ok(t, err)
-				equals(t, sllStmt, stmt)
+				equals(t, stmt, sllStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1677,11 +1677,11 @@ func TestParser_ParseSRAStatement(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
-			if sllStmt, valid := tt.stmt.(*ast.SRAStatement); valid {
+			if sraStmt, valid := tt.stmt.(*ast.SRAStatement); valid {
 				ok(t, err)
-				equals(t, sllStmt, stmt)
+				equals(t, stmt, sraStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1737,9 +1737,9 @@ func TestParser_ParseBEStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if beStmt, valid := tt.stmt.(*ast.BEStatement); valid {
 				ok(t, err)
-				equals(t, beStmt, stmt)
+				equals(t, stmt, beStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1795,9 +1795,9 @@ func TestParser_ParseBNEStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if bneStmt, valid := tt.stmt.(*ast.BNEStatement); valid {
 				ok(t, err)
-				equals(t, bneStmt, stmt)
+				equals(t, stmt, bneStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1853,9 +1853,9 @@ func TestParser_ParseBNEGStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if bnegStmt, valid := tt.stmt.(*ast.BNEGStatement); valid {
 				ok(t, err)
-				equals(t, bnegStmt, stmt)
+				equals(t, stmt, bnegStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1911,9 +1911,9 @@ func TestParser_ParseBPOSStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if bposStmt, valid := tt.stmt.(*ast.BPOSStatement); valid {
 				ok(t, err)
-				equals(t, bposStmt, stmt)
+				equals(t, stmt, bposStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1969,9 +1969,67 @@ func TestParser_ParseBAStatement(t *testing.T) {
 			stmt, err := ParseStatement(tt.str)
 			if baStmt, valid := tt.stmt.(*ast.BAStatement); valid {
 				ok(t, err)
-				equals(t, baStmt, stmt)
+				equals(t, stmt, baStmt)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
+			}
+		})
+	}
+}
+
+// TestParser_ParseCallStatement validates the correct parsing of call commands.
+func TestParser_ParseCallStatement(t *testing.T) {
+	tests := []struct {
+		str  string
+		stmt ast.Statement
+		err  string
+	}{
+		{
+			str: "call x",
+			stmt: &ast.CallStatement{
+				Token:    token.CALL,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "x"},
+			},
+		},
+		{
+			str: "call main",
+			stmt: &ast.CallStatement{
+				Token:    token.CALL,
+				Position: testPos,
+				Target:   &ast.Identifier{Token: token.IDENT, Position: posAfter(6), Name: "main"},
+			},
+		},
+		{
+			str: "call %r1",
+			err: `1:6: found REGISTER "%r1", expected IDENTIFIER`,
+		},
+		{
+			str: "call 123",
+			err: `1:6: found INTEGER "123", expected IDENTIFIER`,
+		},
+		{
+			str: "call call",
+			err: `1:6: found KEYWORD "call", expected IDENTIFIER`,
+		},
+		{
+			str: "call main x",
+			err: `1:11: found IDENTIFIER "x", expected COMMENT, NEWLINE, EOF`,
+		},
+		{
+			str: "\ncall x",
+			err: `1:1: found NEWLINE, expected COMMENT, IDENTIFIER, ".begin", ".end", ".org", "ld", "st", "add", "addcc", "sub", "subcc", "and", "andcc", "or", "orcc", "orn", "orncc", "xor", "xorcc", "sll", "sra", "be", "bne", "bneg", "bpos", "ba", "call", "jmpl"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			stmt, err := ParseStatement(tt.str)
+			if callStmt, valid := tt.stmt.(*ast.CallStatement); valid {
+				ok(t, err)
+				equals(t, stmt, callStmt)
+			} else {
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -1993,11 +2051,11 @@ func TestParser_ParseIdent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			ident, err := New(strings.NewReader(tt.str)).parseIdent()
-			if err == nil {
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, ident)
+				equals(t, ident, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2017,11 +2075,11 @@ func TestParser_ParseRegister(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			ident, err := New(strings.NewReader(tt.str)).parseRegister()
-			if err == nil {
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, ident)
+				equals(t, ident, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2046,11 +2104,11 @@ func TestParser_ParseInteger(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			integer, err := New(strings.NewReader(tt.str)).parseInteger()
-			if err == nil {
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, integer)
+				equals(t, integer, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2076,11 +2134,11 @@ func TestParser_ParseSIMM13(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			integer, err := New(strings.NewReader(tt.str)).parseSIMM13()
-			if err == nil {
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, integer)
+				equals(t, integer, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2095,11 +2153,16 @@ func TestParser_ParseExpression(t *testing.T) {
 	}{
 		{str: "[%r1+8191]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(6), Value: 8191, Literal: "8191"}}},
 		{str: "[%r1+0]", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(6), Value: 0, Literal: "0"}}},
+		{str: "%r1+8191", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(5), Value: 8191, Literal: "8191"}}},
+		{str: "%r1+0", obj: &ast.Expression{Base: &ast.Register{Name: "%r1"}, Operator: "+", Offset: &ast.Integer{Token: token.INT, Position: posAfter(5), Value: 0, Literal: "0"}}},
 		{str: "[x]", obj: &ast.Expression{Base: &ast.Identifier{Token: token.IDENT, Position: posAfter(2), Name: "x"}, Operator: "", Offset: nil}},
-		{str: "x]", err: `1:1: found IDENTIFIER "x", expected "["`},
+		{str: "x", obj: &ast.Expression{Base: &ast.Identifier{Token: token.IDENT, Position: posAfter(1), Name: "x"}, Operator: "", Offset: nil}},
+		{str: "x]", err: `1:2: found "]", expected "+", "-"`}, // TODO: Improve this error message.
+		{str: "[x", err: `1:3: found EOF, expected "+", "-", "]"`},
 		{str: "[+8191]", err: `1:2: found "+", expected IDENTIFIER, REGISTER`},
 		{str: "[0+8191]", err: `1:2: found INTEGER "0", expected IDENTIFIER, REGISTER`},
 		{str: "[%r1 8191]", err: `1:6: found INTEGER "8191", expected "+", "-", "]"`},
+		// {str: "%r1+8191]", err: `1:6: found "]", expected EOF`},
 		{str: "[%r1*8191]", err: `1:5: found ILLEGAL "*", expected "+", "-", "]"`},
 		{str: "[%r1+]", err: `1:6: found "]", expected INTEGER`},
 		{str: "[%r1+45", err: `1:8: found EOF, expected "]"`},
@@ -2108,18 +2171,17 @@ func TestParser_ParseExpression(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
 			exp, err := New(strings.NewReader(tt.str)).parseExpression()
-			if err == nil {
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, exp)
-
+				equals(t, exp, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
 }
 
-// TestParser_ParseMemoryLocation verifies the correct parsing of operands.
+// TestParser_ParseOperand verifies the correct parsing of operands.
 func TestParser_ParseOperand(t *testing.T) {
 	tests := []struct {
 		str string
@@ -2133,12 +2195,12 @@ func TestParser_ParseOperand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
-			loc, err := New(strings.NewReader(tt.str)).parseOperand()
-			if err == nil {
+			op, err := New(strings.NewReader(tt.str)).parseOperand()
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, loc)
+				equals(t, op, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2168,12 +2230,12 @@ func TestParser_ParseMemoryLocation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.str, func(t *testing.T) {
-			loc, err := New(strings.NewReader(tt.str)).parseMemoryLocation()
-			if err == nil {
+			memLoc, err := New(strings.NewReader(tt.str)).parseMemoryLocation()
+			if tt.err == "" {
 				ok(t, err)
-				equals(t, tt.obj, loc)
+				equals(t, memLoc, tt.obj)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2201,7 +2263,7 @@ func TestExpectStatementEnd(t *testing.T) {
 			if err == nil {
 				ok(t, err)
 			} else {
-				equals(t, tt.err, err.Error())
+				equals(t, err.Error(), tt.err)
 			}
 		})
 	}
@@ -2223,9 +2285,7 @@ func posAfter(char int) token.Pos {
 func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 	tb.Helper()
 	if !condition {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: "+msg+"\033[39m\n\n", append([]interface{}{filepath.Base(file), line}, v...)...)
-		tb.FailNow()
+		tb.Fatalf("\033[31m "+msg+"\033[39m\n\n", v...)
 	}
 }
 
@@ -2233,18 +2293,14 @@ func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 func ok(tb testing.TB, err error) {
 	tb.Helper()
 	if err != nil {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d: unttected error: %s\033[39m\n\n", filepath.Base(file), line, err.Error())
-		tb.FailNow()
+		tb.Fatalf("\033[31m unexpected error: %s\033[39m\n\n", err.Error())
 	}
 }
 
-// equals fails the test if tt is not equal to act.
-func equals(tb testing.TB, tt, act interface{}) {
+// equals fails the test if got is not equal to want.
+func equals(tb testing.TB, got, want interface{}) {
 	tb.Helper()
-	if !reflect.DeepEqual(tt, act) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, tt, act)
-		tb.FailNow()
+	if !reflect.DeepEqual(got, want) {
+		tb.Fatalf("\033[31m\n\n\tgot: %#v\n\n\twant: %#v\033[39m\n\n", got, want)
 	}
 }

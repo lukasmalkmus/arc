@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 
 	"github.com/lukasmalkmus/arc/ast"
+	"github.com/lukasmalkmus/arc/internal"
 	"github.com/lukasmalkmus/arc/parser"
+	"github.com/lukasmalkmus/arc/token"
 )
 
 // Options are configuration values for the Assembler.
@@ -74,7 +76,7 @@ func AssembleFile(filename string, options *Options) error {
 	}
 
 	// Assemble source file.
-	code, err := New(prog, options).Assemble()
+	asm, err := New(prog, options).Assemble()
 	if err != nil {
 		return err
 	}
@@ -82,14 +84,61 @@ func AssembleFile(filename string, options *Options) error {
 	// Evaluate destination file and write program to file.
 	ext := filepath.Ext(filename)
 	dest := filename[0 : len(filename)-len(ext)]
-	return ioutil.WriteFile(dest, code, 0644)
+	return ioutil.WriteFile(dest, asm, 0644)
 }
 
 // Assemble will transform ARC source code into machine code. The function
 // returns the assembled program as a slice of bytes. An error is returned if
 // assembling fails.
 func (a *Assembler) Assemble() ([]byte, error) {
-	return []byte(a.prog.String()), nil
+	// Reserve 33 bytes of memory per statement (32bit instruction where one bit
+	// is represented by an ASCII char + 1 byte newline char).
+	prog := make([]byte, 0, len(a.prog.Statements)*33)
+	errs := internal.MultiError{}
+
+	// Assemble the program line by line.
+	for _, stmt := range a.prog.Statements {
+		asm, err := a.AssembleStatement(stmt)
+		if err != nil {
+			errs.Add(err)
+			continue
+		}
+		prog = append(prog, asm...)
+		prog = append(prog, '\n')
+	}
+
+	return prog, errs.Return()
+}
+
+// AssembleStatement will assemble a Statement AST object into ARC assembly.
+func (a *Assembler) AssembleStatement(stmt ast.Statement) ([]byte, error) {
+	// Evaluate which statement to parse.
+	switch stmt.(type) {
+	case *ast.LoadStatement:
+		return a.AssembleLoadStatement(stmt.(*ast.LoadStatement))
+	}
+
+	return nil, &AssemblerError{fmt.Sprintf("no assemble instructions defined for %q", stmt.Tok()), stmt.Pos()}
+}
+
+// AssembleLoadStatement will assemble a LoadStatement AST object into ARC
+// assembly.
+func (a *Assembler) AssembleLoadStatement(stmt *ast.LoadStatement) ([]byte, error) {
+	asm := make([]byte, 0, 32)
+
+	op, ok := LookupOpCode(stmt)
+	if !ok {
+		return nil, &AssemblerError{fmt.Sprintf("missing operation code in lookup table for %q", stmt.Tok()), stmt.Pos()}
+	}
+	asm = append(asm, op...)
+
+	format, ok := LookupInstructionFormat(stmt)
+	if !ok {
+		return nil, &AssemblerError{fmt.Sprintf("missing instruction format in lookup table for %q", stmt.Tok()), stmt.Pos()}
+	}
+	asm = append(asm, format...)
+
+	return asm, nil
 }
 
 // log is a helper function providing shorter and faster logging. It only logs
@@ -98,4 +147,16 @@ func (a *Assembler) log(text string) {
 	if a.opts.Verbose {
 		fmt.Fprintln(a.opts.Log, text)
 	}
+}
+
+// AssemblerError represents an error that occurred during parsing.
+type AssemblerError struct {
+	Message string
+	Pos     token.Pos
+}
+
+// Error returns the string representation of the error. It implements the error
+// interface.
+func (e AssemblerError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Pos, e.Message)
 }

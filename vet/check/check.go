@@ -1,6 +1,6 @@
 /*
 Package check provides an interface for checks as well as some generic helper
-functions. Checks must satisfy the Check interface and register themselfs
+functions. Checks must satisfy the Check interface and register themselves
 by calling vet.Register().
 */
 package check

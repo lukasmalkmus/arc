@@ -373,7 +373,7 @@ func (p *Parser) parseLoadStatement() (stmt *ast.LoadStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between source and destination.
+	// Next we should see a comma as separator between source and destination.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -403,7 +403,7 @@ func (p *Parser) parseStoreStatement() (stmt *ast.StoreStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -433,7 +433,7 @@ func (p *Parser) parseAddStatement() (stmt *ast.AddStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -444,7 +444,7 @@ func (p *Parser) parseAddStatement() (stmt *ast.AddStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -495,7 +495,7 @@ func (p *Parser) parseSubStatement() (stmt *ast.SubStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -506,7 +506,7 @@ func (p *Parser) parseSubStatement() (stmt *ast.SubStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -557,7 +557,7 @@ func (p *Parser) parseAndStatement() (stmt *ast.AndStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -568,7 +568,7 @@ func (p *Parser) parseAndStatement() (stmt *ast.AndStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -619,7 +619,7 @@ func (p *Parser) parseOrStatement() (stmt *ast.OrStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -630,7 +630,7 @@ func (p *Parser) parseOrStatement() (stmt *ast.OrStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -681,7 +681,7 @@ func (p *Parser) parseOrnStatement() (stmt *ast.OrnStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -692,7 +692,7 @@ func (p *Parser) parseOrnStatement() (stmt *ast.OrnStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -743,7 +743,7 @@ func (p *Parser) parseXorStatement() (stmt *ast.XorStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -754,7 +754,7 @@ func (p *Parser) parseXorStatement() (stmt *ast.XorStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -805,7 +805,7 @@ func (p *Parser) parseSLLStatement() (stmt *ast.SLLStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -816,7 +816,7 @@ func (p *Parser) parseSLLStatement() (stmt *ast.SLLStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -846,7 +846,7 @@ func (p *Parser) parseSRAStatement() (stmt *ast.SRAStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -857,7 +857,7 @@ func (p *Parser) parseSRAStatement() (stmt *ast.SRAStatement, err error) {
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between destination and source.
+	// Next we should see a comma as separator between destination and source.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}
@@ -1001,7 +1001,7 @@ func (p *Parser) parseJumpAndLinkStatement() (stmt *ast.JumpAndLinkStatement, er
 		return nil, err
 	}
 
-	// Next we should see a comma as seperator between source and destination.
+	// Next we should see a comma as separator between source and destination.
 	if p.next(); p.tok != token.COMMA {
 		return nil, p.newParseError(token.COMMA)
 	}

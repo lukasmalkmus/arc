@@ -123,10 +123,10 @@ func BenchmarkMultiError_Sort(b *testing.B) {
 		errors.New("5:34 second error"),
 		errors.New("56:23 sixth error"),
 		errors.New("1:1 tenth error"),
-		errors.New("9:34 thrid error"),
+		errors.New("9:34 third error"),
 		errors.New("2:7 seventh error"),
 		errors.New("8:3 fourth error"),
-		errors.New("53:11 eigth error"),
+		errors.New("53:11 eighth error"),
 	}
 	for i := 0; i < b.N; i++ {
 		me := MultiError{}

@@ -150,7 +150,7 @@ The following pseudo-operations are supported:
 
 .begin, .end: Start and stop assembly, respectively.
 
-.org: Change location counter to the address specifed.
+.org: Change location counter to the address specified.
 Example usage: .org 0x800. The next instruction will be
 assembled at location 0x800 (2048).
 

@@ -11,6 +11,15 @@
 
 ---
 
+## DISCLAIMER
+
+This project idled in my GOPATH, so I decided to release it. It is in a WIP
+state, some features are not working and some tests not passing. I haven't
+worked on it for a while and don't plan to further develop it. Today I would
+also do a lot of things differently.
+
+If you are interested what currently works, checkout out the passing tests.
+
 ## Table of Contents
 
 1. [Introduction](#introduction)
@@ -76,7 +85,7 @@ Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 
 ### License
 
-© Lukas Malkmus, 2017
+© Lukas Malkmus, 2018
 
 Distributed under MIT License (`The MIT License`).
 
